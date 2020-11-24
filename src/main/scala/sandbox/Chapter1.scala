@@ -2,6 +2,8 @@ package chapter1
 
 object Chapter1 {
 
+  // 1.1 Anatomy of a Type Class
+  // このセクションでは、Scalaで型クラスがどう実装されているかを見る
   // 1.1.1 The Type Class
   // シンプルなJSON AST定義
   sealed trait Json
@@ -118,15 +120,15 @@ object Chapter1 {
         }
     }
 
-  def main(args: Array[String]): Unit = {
-    import JsonWriterInstances._
-    // 以下ではコンパイラーは、JsonWriter[Option[String]]を検索し、JsonWriter[Option[A]]を発見する
-    println(Json.toJson(Option("A string"))) // JsString(A string)
-    // toJsonのimplicitにoptionWriterを直接指定
-    // optionWriterのimplicitのJsonWriter[String]に該当する関数を再帰的に検索する
-    println(Json.toJson(Option("A string"))(optionWriter[String])) // JsString(A string)
-    println(Json.toJson(Option("A string"))(optionWriter(stringWriter))) // JsString(A string)
-  }
+//  def main(args: Array[String]): Unit = {
+//    import JsonWriterInstances._
+//    // 以下ではコンパイラーは、JsonWriter[Option[String]]を検索し、JsonWriter[Option[A]]を発見する
+//    println(Json.toJson(Option("A string"))) // JsString(A string)
+//    // toJsonのimplicitにoptionWriterを直接指定
+//    // optionWriterのimplicitのJsonWriter[String]に該当する関数を再帰的に検索する
+//    println(Json.toJson(Option("A string"))(optionWriter[String])) // JsString(A string)
+//    println(Json.toJson(Option("A string"))(optionWriter(stringWriter))) // JsString(A string)
+//  }
 
   // implicitで定義した関数のパラメーターはimplicitにしないといけない
   // implicit def optionWriter[A](writer: JsonWriter[A]): JsonWriter[Option[A]] = ??? // Warning
@@ -136,6 +138,7 @@ object Chapter1 {
   //    format関数はAが引数、Stringが戻り値となる
   // 2. StringとIntのPrintableインスタンスを含むPrintableInstancesを作成せよ
   // 3. 2つの汎用インターフェイスを持つPrintableオブジェクトを定義せよ
+  // 答え見た
   trait Printable[A] {
     def format(value: A): String
   }
@@ -161,4 +164,83 @@ object Chapter1 {
   }
 
   // 1.4 Meet Cats
+  // このセクションでは、Catsで型クラスがどう実装されているか見る
+
+  // 1.4.1 Importing Type Classes
+  import cats.Show
+  // すべてのCats型クラスのコンパニオンオブジェクトははapply関数を持つ
+  // ただし、implicitで定義されたインスタンスをスコープ内に含めないと以下はエラーになる
+  // val showInt = Show.apply[Int] // エラー: No implicit arguments of type: Show[Int]
+
+  // 1.4.2 Importing Default Instances
+  // cats.instancesパッケージをインポートすればエラーはなくなり、使えるようになる
+  import cats.instances.int._
+  import cats.instances.string._
+  // val showInt: Show[Int] = Show.apply[Int]
+  // val showString: Show[String] = Show.apply[String]
+
+//  def main(args: Array[String]): Unit = {
+//    val intAsString: String = showInt.show(123)
+//    val stringAsString: String = showString.show("abc")
+//    println(intAsString) // 123
+//    println(stringAsString) // abc
+//  }
+
+  // 1.4.3 Importing Interface Syntax
+  // 上記のcats.instancesでインポートしたすべての型にshowメソッドを追加できる
+  import cats.syntax.show._
+
+//  def main(args: Array[String]): Unit = {
+//    val shownInt = 123.show
+//    val shownString = "abc".show
+//    println(shownInt) // 123
+//    println(shownString) // abc
+//  }
+
+  // 1.4.4 Importing All The Things!
+  // すべての型クラスと構文をインポートできる
+  // import cats._
+  // import cats.implicits._
+
+  // 1.4.5 Defining Custom Instances
+  // JavaでShowのインスタンスを以下のように定義できる
+  import java.util.Date
+
+  // implicit val dateShow: Show[Date] =
+  //   new Show[Date] {
+  //     def show(date: Date): String =
+  //       s"${date.getTime}ms since the epoch."
+  //   }
+
+//  def main(args: Array[String]): Unit = {
+//    println(new Date().show) // 1605883196572ms since the epoch.
+//  }
+
+  // しかし、Showのコンパニオンオブジェクトで以下を定義すれば、簡略化できる
+  // object Show {
+  //   def show[A](f: A => String): Show[A] = ???
+  //   def fromToString[A]: Show[A] = ???
+  // }
+
+  implicit val dateShow: Show[Date] =
+    Show.show(date => s"${date.getTime}ms since the epoch.")
+
+  // 1.4.6 Exercise: Cat Show
+  // Printableの代わりにShowを使って、前のセクションのCatアプリケーションを再実装せよ
+  // 答え見た
+  // そもそも、Catアプリケーションが何なのか分からなかった
+  final case class Cat(name: String, age: Int, color: String)
+
+  implicit val catShow: Show[Cat] = Show.show[Cat] { cat =>
+    val name = cat.name.show
+    val age = cat.age.show
+    val color = cat.color.show
+    s"$name is a $age year-old $color cat."
+  }
+
+//  def main(args: Array[String]): Unit = {
+//    println(Cat("Garfield", 38, "ginger and black").show) // Garfield is a 38 year-old ginger and black cat.
+//  }
+
+  // 1.5 Example: Eq
 }
