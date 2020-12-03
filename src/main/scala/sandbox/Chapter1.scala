@@ -1,7 +1,6 @@
 package chapter1
 
 object Chapter1 {
-
   // 1.1 Anatomy of a Type Class
   // このセクションでは、Scalaで型クラスがどう実装されているかを見る
   // 1.1.1 The Type Class
@@ -13,9 +12,9 @@ object Chapter1 {
   final case class JsNumber(get: Double) extends Json
   final case object JsNull extends Json
 
-  trait JsonWriter[A] {
-    def write(value: A): Json
-  }
+  // trait JsonWriter[A] {
+  //   def write(value: A): Json
+  // }
 
   // 1.1.2 Type Class Instances
   // implicitで暗黙的にインスタンスを生成
@@ -110,15 +109,15 @@ object Chapter1 {
   // これだとAとOption[A]の2つをimplicit valで定義する必要があるため、拡張性がない
 
   // Option[A]を処理するためのコードを定義し、Someの時にAも処理できるようにする
-  implicit def optionWriter[A](
-      implicit writer: JsonWriter[A]): JsonWriter[Option[A]] =
-    new JsonWriter[Option[A]] {
-      def write(option: Option[A]): Json =
-        option match {
-          case Some(aValue) => writer.write(aValue)
-          case None         => JsNull
-        }
-    }
+  // implicit def optionWriter[A](
+  //     implicit writer: JsonWriter[A]): JsonWriter[Option[A]] =
+  //   new JsonWriter[Option[A]] {
+  //     def write(option: Option[A]): Json =
+  //       option match {
+  //         case Some(aValue) => writer.write(aValue)
+  //         case None         => JsNull
+  //       }
+  //   }
 
 //  def main(args: Array[String]): Unit = {
 //    import JsonWriterInstances._
@@ -229,7 +228,7 @@ object Chapter1 {
   // Printableの代わりにShowを使って、前のセクションのCatアプリケーションを再実装せよ
   // 答え見た
   // そもそも、Catアプリケーションが何なのか分からなかった
-  final case class Cat(name: String, age: Int, color: String)
+  // final case class Cat(name: String, age: Int, color: String)
 
   implicit val catShow: Show[Cat] = Show.show[Cat] { cat =>
     val name = cat.name.show
@@ -243,4 +242,168 @@ object Chapter1 {
 //  }
 
   // 1.5 Example: Eq
+  // この章では、cats.Eqを見る
+  // 以下はミスをしている、IntとOption[Int]を比較しているので、常にfalseを返してしまう
+  // itemとSome(1)を比較するのが正しい
+  // List(1, 2, 3).map(Option(_)).filter(item => item == 1)
+  // ==では上記は型エラーにならない（ランタイムエラーになる）が、Eqだとタイプセーフな設計なので、上記を型エラーにしてくれる
+
+  // 1.5.1 Equality, Liberty, and Fraternity
+  // cats.syntax.eqで定義されているインターフェイス構文では、スコープ内にEq[A]インスタンスがある場合、
+  // 同等性をチェックする「===」と「=!=」の2つのメソッドが用意されている
+  // 「===」が2つのオブジェクトの平等比較で「=!=」が2つのオブジェクトの不平等比較になる
+
+  // 1.5.2 Comparing Ints
+  import cats.Eq
+  import cats.instances.int._
+
+  val eqInt = Eq[Int]
+
+//  def main(args: Array[String]): Unit = {
+//    println(eqInt.eqv(123, 123)) // true
+//    println(eqInt.eqv(123, 234)) // false
+//    // println(eqInt.eqv(123, "123")) // type mismatch error
+//    // println(123 == "123") // runtime error
+//  }
+
+  import cats.syntax.eq._
+
+//  def main(args: Array[String]): Unit = {
+//    println(123 === 123) // true
+//    println(123 =!= 234) // true
+//    // println(123 === "123") // type mismatch error
+//  }
+
+  // 1.5.3 Comparing Options
+  // import cats.instances.int._
+  // import cats.instances.option._
+
+//  def main(args: Array[String]): Unit = {
+//    // 以下は型が完全一致していないからエラー
+//    // IntとOption[Int]のスコープにEqインスタンスがあるが、比較している値はSome[Int]だからである
+//    // println(Some(1) === None) // error
+//    // 以下のようにすればよい
+//    println((Some(1): Option[Int]) === (None: Option[Int])) // false
+//    // さらに標準ライブラリのOption.applyとOption.emptyを使って、より良い方法で書ける
+//    println(Option(1) === Option.empty[Int]) // false
+//    // もしくは以下のような書き方もある
+//    import cats.syntax.option._
+//    println(1.some === none[Int]) // false
+//    println(1.some =!= none[Int]) // true
+//  }
+
+  // 1.5.4 Comparing Custom Types
+  // Eq.instanceを使って、独自のEqインスタンスを定義できる
+  import java.util.Date
+  import cats.instances.long._
+
+  implicit val dateEq: Eq[Date] =
+    Eq.instance[Date] { (date1, date2) =>
+      date1.getTime === date2.getTime
+    }
+
+  val x = new Date()
+  Thread.sleep(1000)
+  val y = new Date()
+
+//  def main(args: Array[String]): Unit = {
+//    println(x === x) // true
+//    println(x === y) // false
+//  }
+
+  // 1.5.5 Exercise: Equality, Liberty, and Felinity
+  // 前のセクションのCatにEqインスタンスを実装せよ
+  final case class Cat(name: String, age: Int, color: String)
+
+  implicit val catEq: Eq[Cat] =
+    Eq.instance[Cat] { (c1, c2) =>
+      c1.name === c2.name && c1.age === c2.age && c1.color === c2.color
+    }
+
+  // cat1とcat2、optionCat1とoptionCat2の等式と不等式を比較せよ
+  val cat1 = Cat("Garfield", 38, "orange and black")
+  val cat2 = Cat("Heathcliff", 33, "orange and black")
+
+  val optionCat1 = Option(cat1)
+  val optionCat2 = Option.empty[Cat]
+
+//  def main(args: Array[String]): Unit = {
+//    println(cat1 === cat2) // false
+//    println(cat1 =!= cat2) // true
+//    import cats.instances.option._
+//    println(optionCat1 === optionCat2) // false
+//    println(optionCat1 =!= optionCat2) // true
+//  }
+
+  // 1.6 Controlling Instance Selection
+  // 型クラスを操作する時は、2つの問題を考える必要がある
+  // ① 型定義されたインスタンスとそのサブタイプの関係性
+  // 　 JsonWriter[Option[Int]]が定義された時、Json.toJson(Some(1))はこの定義を選択するだろうか？
+  // 　 ⇒ SomeはOptionのサブタイプである
+  // ② 利用可能な型クラスインスタンスが多数ある場合、どのように1つを選択するか
+
+  // 1.6.1 Variance
+  // 共変（Covariance）・反変（Contravariance）・不変（Invariance）の3つの変位（Variance）を説明する
+
+  // +は共変を意味する
+  // trait F[+A]
+
+  // 共変性とは、BがAのサブタイプである場合、F[B]がF[A]のサブタイプであることを意味する
+  // これはListやOptionなどのコレクションのモデリングで役に立つ
+  trait List[+A]
+  trait Option[+A]
+
+  // Scalaの共変性により、ある型のコレクションをサブタイプのコレクションに置き換えることができる
+  sealed trait Shape
+  case class Circle(radius: Double) extends Shape
+
+  // val circles: List[Circle] = ???
+  // CircleはShapeのサブタイプなので、List[Shape]コレクションをList[Circle]に置き換えてよい
+  // val shapes: List[Shape] = circles
+
+  // -は反変を意味する
+  // trait F[-A]
+
+  // 反変性とは、AがBのサブタイプである場合、F[B]がF[A]のサブタイプであることを意味する
+  // これはJsonWriterのように入力を表す型をモデリングするときに役に立つ
+  trait JsonWriter[-A] {
+    def write(value: A): Json
+  }
+
+  // 以下のコードは反変性をモデリングしている
+  // CircleはShapeのサブタイプなので、shapeWriterとcircleWriterの両方をformatに渡せる
+  // （CircleはShapeのサブタイプなので、JsonWriter[Shape]はJsonWriter[Circle]のサブタイプとなる）
+  // （つまり、JsonWriter[Circle]が使える所はshapeWriterを使用できることを意味する）
+  // 逆にShapeは、shapeWriterのみformatに渡せる
+  //  val shape: Shape = ???
+  //  val circle: Circle = ???
+
+  //  val shapeWriter: JsonWriter[Shape] = ???
+  //  val circleWriter: JsonWriter[Circle] = ???
+
+  def format[A](value: A, writer: JsonWriter[A]): Json =
+    writer.write(value)
+
+  // +と-がない場合、不変を意味する
+  // AとBに関係性がなく、F[A]とF[B]が互いにサブタイプではないことを意味する
+  trait F[A]
+
+  // コンパイラーがimplicitを検索する時、変位アノテーションを使用して、型クラスインスタンスの選択をある程度制御できる
+  // ただし、発生しがちな2つの問題がある
+  //  sealed trait A
+  //  final case object B extends A
+  //  final case object C extends A
+  // ① スーパータイプで定義されたインスタンスが利用可能な場合、それがサブタイプで利用できるか
+  // 　 つまり、Aのインスタンスを定義して、型Bと型Cの値に対して機能させることはできるか
+  // ② サブタイプのインスタンスは、スーパータイプのインスタンスよりも優先されるか
+  // 　 つまり、型Aと型Bのインスタンスを定義し、型Bの値がある場合、AよりもBのインスタンスが選択されるか
+  // 上記の①と②は両立しない
+  // 各変位ごとの動作は以下のようになる
+  // 共変：①は不可、②は可
+  // 反変：①は可、②は不可
+  // 不変：①も②も不可
+
+  // Catsは不変性の型を使用することを好む
+
+  // 1.7 Summary
 }
