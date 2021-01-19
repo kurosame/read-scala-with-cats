@@ -440,4 +440,88 @@ object Chapter3 {
 //    println(dec) //
 //    println(dec.getClass) //
 //  }
+
+  // 3.6 Contravariant and Invariant in Cats
+  /**
+    * CatsのContravariantファンクターとInvariantファンクターは、それぞれcats.Contravariantとcats.Invariantによって提供される
+    * これらのコードの簡易版は以下となる
+    */
+//  trait Contravariant[F[_]] {
+//    def contramap[A, B](fa: F[A])(f: B => A): F[B]
+//  }
+//
+//  trait Invariant[F[_]] {
+//    def imap[A, B](fa: F[A])(f: A => B)(g: B => A): F[B]
+//  }
+
+  // 3.6.1 Contravariant in Cats
+//  import cats.Contravariant
+//  import cats.Show
+//  import cats.instances.string._
+//
+//  val showString = Show[String]
+//
+//  def main(args: Array[String]): Unit = {
+//    val showSymbol =
+//      Contravariant[Show].contramap(showString)((sym: Symbol) =>
+//        s"'${sym.name}")
+//    println(showSymbol.show(Symbol("dave"))) // 'dave
+//
+//    import cats.syntax.contravariant._
+//    val showSymbol2 = showString
+//      .contramap[Symbol](sym => s"'${sym.name}")
+//    println(showSymbol2.show(Symbol("dave"))) // 'dave
+//  }
+
+  // 3.6.2 Invariant in Cats
+  /**
+    * Catsは、MonoidのInvariantインスタンスを提供する
+    *
+    * 例として、Symbol型のMonoidを作成したいとする
+    * Catsは、SymbolのMonoidはないが、似た型のStringを提供する
+    * 以下のようにすれば、SymbolをMonoidで扱える
+    * 1. 2つのSymbolのパラメータを受け取る
+    * 2. 2つのSymbolをStringにコンバートする
+    * 3. Monoid[String]を使って、Stringを結合する
+    * 4. 結果をSymbolに変換して返す
+    *
+    * imapを使って、combineを実装できる
+    */
+//  import cats.Monoid
+//  import cats.instances.string._
+//  import cats.syntax.invariant._
+//  import cats.syntax.semigroup._
+//
+//  implicit val symbolMonoid: Monoid[Symbol] = {
+//    // (String => Symbol)と(Symbol => String)の2つの関数をパラメーターとして渡して、imapでcombineを実装
+//    Monoid[String].imap(Symbol.apply)(_.name)
+//  }
+//
+//  def main(args: Array[String]): Unit = {
+//    println(Monoid[Symbol].empty) // '
+//    println(Symbol("a") |+| Symbol("few") |+| Symbol("words")) // 'afewwords
+//  }
+
+  // 3.7 Aside: Partial Unification
+  // TODO: 3.7 全体的に分からない
+//  // Function1は2つの型パラメーター（引数と戻り値）を持つ
+//  trait Function1[-A, +B] {
+//    def apply(arg: A): B
+//  }
+//
+//  // ただし、Functorは1つのパラメーターを持つ型コンストラクターを受け入れる
+//  trait Functor[F[_]] {
+//    def map[A, B](fa: F[A])(func: A => B): F[B]
+//  }
+//
+//  // よって、以下の型エイリアスを定義すればよい
+//  type F[A] = Int => A
+
+  // 3.7.1 Limitations of Partial Unification
+
+  // 3.8 Summary
+  /**
+  * コレクションのファンクターは、各要素が独立して変換するため、大規模なコレクションで変換を並列化・分散化できある
+  * Hadoopのようなmap-reduceフレームワークで活用される
+  */
 }
