@@ -294,4 +294,199 @@ object Chapter4 {
 //    println(flatMap(123)(_ * 2)) // 246
 //  }
 
+  // 4.4 Either
+  // 4.4.1 Left and Right Bias
+  /**
+    * Scala 2.11以前ではEitherは、mapとflatMapを持たないので、`.right`が必要だった
+    */
+//  val either1: Either[String, Int] = Right(10)
+//  val either2: Either[String, Int] = Right(32)
+//
+//  for {
+//    a <- either1.right
+//    b <- either2.right
+//  } yield a + b // 42
+
+  /**
+    * Scala 2.12からは、Eitherが再設計され、mapとflatMapを持つようになったので、`.right`が不要になった
+    */
+//  val either1: Either[String, Int] = Right(10)
+//  val either2: Either[String, Int] = Right(32)
+//
+//  for {
+//    a <- either1
+//    b <- either2
+//  } yield a + b // Right(42)
+
+  /**
+    * Scala 2.11以前では、`cats.syntax.either._`をimportすることでmapとflatMapを使えるようになる
+    * Scala 2.12以降はこのパッケージは省略可能
+    */
+  // 4.4.2 Creating Instances
+//  import cats.syntax.either._
+//
+//  def main(args: Array[String]): Unit = {
+//    val a = 3.asRight[String]
+//    val b = 4.asRight[String]
+//    val c = for {
+//      x <- a
+//      y <- b
+//    } yield x * x + y * y
+//
+//    println(a) // Right(3)
+//    println(b) // Right(4)
+//    println(c) // Right(25)
+//  }
+
+  /**
+    * Left.applyはLeftをRight.applyはRightを返すが、上記のasRightはEither型を返すので便利なときがある
+    */
+  // Right.applyを使った例
+//  def countPositive(nums: List[Int]) =
+//    nums.foldLeft(Right(0)) { (accumulator, num) =>
+//      if (num > 0) {
+//        // コンパイラーはaccumulatorをRight型と推測している
+//        // mapはEither型を返すのでtype mismatchとなる
+//        accumulator.map(_ + 1)
+//      } else {
+//        // こちらも同様にaccumulatorをRight型と推測しているので、type mismatchとなる
+//        // さらにRight[Int](0)のように型パラメーターを指定していないので、コンパイラーは左側をNothingと推測する
+//        // 以下はStringを指定しているので、type mismatchとなる
+//        Left("Negative. Stopping!")
+//      }
+//    }
+
+  // asRightを使った例
+//  import cats.syntax.either._
+//
+//  def countPositive(nums: List[Int]) =
+//    nums.foldLeft(0.asRight[String]) { (accumulator, num) =>
+//      if (num > 0) {
+//        // コンパイラーはEither[String, Int]と推測するので、エラーにならない
+//        accumulator.map(_ + 1)
+//      } else {
+//        // こちらも同様にエラーにならない
+//        Left("Negative. Stopping!")
+//      }
+//    }
+//
+//  def main(args: Array[String]): Unit = {
+//    println(countPositive(List(1, 2, 3))) // Right(3)
+//    println(countPositive(List(1, -2, 3))) // Left(Negative. Stopping!)
+//  }
+
+  /**
+    * catchOnly関数とcatchNonFatal関数は例外をキャッチするのに最適である
+    */
+//  import cats.syntax.either._
+//
+//  def main(args: Array[String]): Unit = {
+//    println(Either.catchOnly[NumberFormatException]("foo".toInt))
+//    // Left(java.lang.NumberFormatException: For input string: "foo")
+//    println(Either.catchNonFatal(sys.error("Badness")))
+//    // Left(java.lang.RuntimeException: Badness)
+//
+//    // 他のデータ型からEitherを作ることも可能
+//    println(Either.fromTry(scala.util.Try("foo".toInt)))
+//    // Left(java.lang.NumberFormatException: For input string: "foo")
+//    println(Either.fromOption[String, Int](None, "Badness"))
+//    // Left(Badness)
+//  }
+
+  // 4.4.3 Transforming Eithers
+//  import cats.syntax.either._
+//
+//  def main(args: Array[String]): Unit = {
+//    // Leftなので、デフォルトの値の0を返す
+//    println("Error".asLeft[Int].getOrElse(0)) // 0
+//
+//    // Leftなので、デフォルトのEitherのRight(2)を返す
+//    println("Error".asLeft[Int].orElse(2.asRight[String])) // Right(2)
+//
+//    // ensure関数はRightが条件を満たすか確認できる
+//    println((-1).asRight[String].ensure("Must be non-negative!")(_ > 0)) // Left(Must be non-negative!)
+//
+//    // recoverとrecoverWithはエラー処理を行える
+//    // Left（エラー）なので、caseで指定した処理を行う
+//    println("error".asLeft[Int].recover { case _: String     => -1 }) // Right(-1)
+//    println("error".asLeft[Int].recoverWith { case _: String => Right(-1) }) // Right(-1)
+//
+//    // map系
+//    println("foo".asLeft[Int].leftMap(_.reverse)) // Left(oof)
+//    println(6.asRight[String].bimap(_.reverse, _ * 7)) // Right(42)
+//    println("bar".asLeft[Int].bimap(_.reverse, _ * 7)) // Left(rab)
+//
+//    // swapはRightとLeftを入れ替える
+//    println(123.asRight[String]) // Right(123)
+//    println(123.asRight[String].swap) // Left(123)
+//  }
+
+  // 4.4.4 Error Handling
+  /**
+    * EitherのflatMapで計算をシーケンスすると、1つでも計算に失敗したら、以降の計算は行われない
+    */
+//  import cats.syntax.either._
+//
+//  def main(args: Array[String]): Unit = {
+//    val res = for {
+//      a <- 1.asRight[String]
+//      b <- 0.asRight[String]
+//      c <- if (b == 0) "DIV0".asLeft[Int]
+//      else (a / b).asRight[String]
+//    } yield c * 100
+//
+//    println(res) // Left(DIV0)
+//    // c * 100は行われない
+//  }
+
+  /**
+    * エラー処理でEitherを使用する場合、エラーの型を決める必要がある
+    */
+//  type Result[A] = Either[Throwable, A]
+
+  /**
+    * ただし、Throwableは広すぎて具体的にどのようなエラーが起きたのか分からない
+    *
+    * 別のアプローチとして、プログラムで発生する可能性のあるエラーを定義する
+    */
+//  sealed trait LoginError extends Product with Serializable
+//
+//  final case class UserNotFound(username: String) extends LoginError
+//
+//  final case class PasswordIncorrect(username: String) extends LoginError
+//
+//  case object UnexpectedError extends LoginError
+//
+//  case class User(username: String, password: String)
+//
+//  type LoginResult = Either[LoginError, User]
+//
+//  // パターンマッチでエラーごとに処理が定義できる
+//  def handleError(error: LoginError): Unit =
+//    error match {
+//      case UserNotFound(u)      => println(s"User not found: $u")
+//      case PasswordIncorrect(u) => println(s"Password incorrect: $u")
+//      case UnexpectedError      => println(s"Unexpected error")
+//    }
+//
+//  def main(args: Array[String]): Unit = {
+//    import cats.syntax.either._
+//    val result1: LoginResult = User("dave", "passw0rd").asRight
+//    val result2: LoginResult = UserNotFound("dave").asLeft
+//
+//    println(result1.fold(handleError, println)) // User(dave,passw0rd)
+//    println(result2.fold(handleError, println)) // User not found: dave
+//  }
+
+  // 4.4.5 Exercise: What is Best?
+  /**
+    * 前述のエラー処理戦略は、すべての目的に適しているか？
+    * エラー処理に他にどのような機能が必要か？
+    */
+  // 答え見た
+  // エラーのリカバリ処理が必要
+  // エラーの通知
+  // 最初に発生したエラーだけでなく、すべてのエラーを収集する必要がある
+  // たとえば、入力フォームを例にすると、1つずつエラーを報告するより、1回ですべてのエラーを報告した方がよいだろう
+
 }
