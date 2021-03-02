@@ -489,4 +489,350 @@ object Chapter4 {
   // 最初に発生したエラーだけでなく、すべてのエラーを収集する必要がある
   // たとえば、入力フォームを例にすると、1つずつエラーを報告するより、1回ですべてのエラーを報告した方がよいだろう
 
+  // 4.5 Aside: Error Handling and MonadError
+  /**
+    * CatsはEitherのようなMonadErrorというエラー処理に使えるデータ型を提供する
+    */
+  // 4.5.1 The MonadError Type Class
+  /**
+    * MonadErrorの定義の簡易版を以下に示す
+    *
+    *  Fは、モナドの型
+    *  Eは、Fに含まれるエラーの型
+    */
+//  import cats.Monad
+//
+//  trait MonadError[F[_], E] extends Monad[F] {
+//    def raiseError[A](e: E): F[A]
+//    def handleErrorWith[A](fa: F[A])(f: E => F[A]): F[A]
+//    def handleError[A](fa: F[A])(f: E => A): F[A]
+//    def ensure[A](fa: F[A])(e: E)(f: A => Boolean): F[A]
+//  }
+
+  /**
+    * Eitherの型クラスをインスタンス化する例を以下に示す
+    */
+//  import cats.MonadError
+//  import cats.instances.either._
+//
+//  type ErrorOr[A] = Either[String, A]
+//  val monadError = MonadError[ErrorOr, String]
+
+  // 4.5.2 Raising and Handling Errors
+  /**
+    * MonadErrorの重要な関数はraiseErrorとhandleErrorWithである
+    */
+//  import cats.MonadError
+//  import cats.instances.either._
+//
+//  type ErrorOr[A] = Either[String, A]
+//  val monadError = MonadError[ErrorOr, String]
+//
+//  def main(args: Array[String]): Unit = {
+//    val success = monadError.pure(42)
+//    val failure = monadError.raiseError("Badness")
+//
+//    println(success) // Right(42)
+//    println(failure) // Left(Badness)
+//
+//    val res = monadError.handleErrorWith(failure) {
+//      case "Badness" => monadError.pure("It's ok")
+//      case _         => monadError.raiseError("It's not ok")
+//    }
+//    println(res) // Right(It's ok)
+//
+//    val res2 = monadError.ensure(success)("Number too low!")(_ > 1000)
+//    println(res2) // Left(Number too low!)
+//  }
+
+  /**
+    * Catsは、cats.syntax.applicativeError経由でraiseErrorとhandleErrorWithを提供する
+    * また、cats.syntax.monadError経由でensureを提供する
+    */
+//  import cats.syntax.applicative._
+//  import cats.syntax.applicativeError._
+//  import cats.syntax.monadError._
+//  import cats.instances.either._
+//
+//  type ErrorOr[A] = Either[String, A]
+//
+//  def main(args: Array[String]): Unit = {
+//    val success = 42.pure[ErrorOr]
+//    val failure = "Badness".raiseError[ErrorOr, Int]
+//    val successWith = failure.handleErrorWith {
+//      case "Badness" => 256.pure
+//      case _         => ("It's not ok").raiseError
+//    }
+//    val ensure = success.ensure("Number to low!")(_ > 1000)
+//
+//    println(success) // Right(42)
+//    println(failure) // Left(Badness)
+//    println(successWith) // Right(256)
+//    println(ensure) // Left(Number to low!)
+//  }
+
+  // 4.5.3 Instances of MonadError
+  /**
+    * Catsは、Either、Future、Tryなど多数のデータ型に対してMonadErrorインスタンスを提供する
+    * Eitherは任意のエラー型にカスタマイズ可能だが、FutureとTryは常にエラーをThrowablesとして表す
+    */
+//  import cats.syntax.applicativeError._
+//  import scala.util.Try
+//  import cats.instances.try_._
+//
+//  val exn: Throwable = new RuntimeException("It's all gone wrong")
+//  exn.raiseError[Try, Int]
+
+  // 4.5.4 Exercise: Abstracting
+  /**
+    * 以下のシグネチャーを持つvalidateAdultを実装せよ
+    *
+    * def validateAdult[F[_]](age: Int)(implicit me: MonadError[F, Throwable]): F[Int]
+    *
+    * 18歳以上だと成功、それ以外の場合はIllegalArgumentExceptionを返す
+    */
+//  // 答え見た
+//  import cats.MonadError
+//  import cats.syntax.applicative._
+//  import cats.syntax.applicativeError._
+//
+//  def validateAdult[F[_]](age: Int)(
+//      implicit me: MonadError[F, Throwable]): F[Int] =
+//    if (age >= 18) age.pure[F]
+//    else
+//      new IllegalArgumentException("Age must be greater than or equal to 18")
+//        .raiseError[F, Int]
+//
+//  def main(args: Array[String]): Unit = {
+//    import scala.util.Try
+//    import cats.instances.try_._
+//
+//    println(validateAdult[Try](18)) // Success(18)
+//    println(validateAdult[Try](8))
+//    // Failure(java.lang.IllegalArgumentException: Age must be greater than or equal to 18)
+//
+//    // type ExceptionOr[A] = Either[Throwable, A]
+//    // implicitが足りなくて実行できなかった
+//    // println(validateAdult[ExceptionOr](-1))
+//  }
+
+  // 4.6 The Eval Monad
+  /**
+    * cats.Evalは、様々な評価モデルを抽象化できるモナドである
+    * Evalは結果をメモ化（キャッシュ化）することもできる
+    * Evalはスタックセーフである
+    */
+  // 4.6.1 Eager, Lazy, Memoized, Oh My!
+  /**
+    * Scalaのvalの評価モデルを見る
+    * 副作用のある計算を使用して評価モデルを見る
+    */
+//  def main(args: Array[String]): Unit = {
+//    val x = {
+//      println("Computing X")
+//      math.random
+//    }
+//    // xの計算は上記で定義した所で行われているので、以下は計算を再実行しないので同じ結果となる
+//    // つまり計算は1回だけ評価されてメモ化されている
+//    println(x)
+//    println(x)
+//    // Computing X
+//    // 0.8437424364898989
+//    // 0.8437424364898989
+//  }
+
+  /**
+    * 次にdefの例を見てみる
+    */
+//  def main(args: Array[String]): Unit = {
+//    def y = {
+//      println("Computing Y")
+//      math.random
+//    }
+//    // defの場合は使用されるまで評価されず、実行のたびに計算される
+//    // つまり、lazyな評価でメモ化もされていない
+//    println(y)
+//    println(y)
+//    // Computing Y
+//    // 0.883016946481187
+//    // Computing Y
+//    // 0.8485539986911335
+//  }
+
+  /**
+    * 次にlazy valの例を見てみる
+    */
+//  def main(args: Array[String]): Unit = {
+//    lazy val z = {
+//      println("Computing Z")
+//      math.random
+//    }
+//    // lazy valは、使用されるまで評価されず、最初に実行された時に結果をメモ化する
+//    println(z)
+//    println(z)
+//    // Computing Z
+//    // 0.9851647012959723
+//    // 0.9851647012959723
+//  }
+
+  // 4.6.2 Eval’s Models of Evaluation
+  /**
+    * Evalは、Now、Always、Laterの3つのサブタイプがある
+    */
+//  import cats.Eval
+//
+//  def main(args: Array[String]): Unit = {
+//    val now = Eval.now(math.random + 1000)
+//    val always = Eval.always(math.random + 3000)
+//    val later = Eval.later(math.random + 2000)
+//
+//    println(now) // Now(1000.8662074491152)
+//    println(always) // cats.Always@edf4efb
+//    println(later) // cats.Later@2f7a2457
+//
+//    println(now.value) // 1000.8662074491152
+//    println(always.value) // 3000.159004971797
+//    println(later.value) // 2000.0828479897061
+//  }
+
+  /**
+    * Eval.nowは、valと同様（定義した時に評価され、メモ化される）
+    * Eval.alwaysは、defと同様（実行時に評価され、メモ化されない）
+    * Eval.laterは、lazy valと同様（実行時に評価され、メモ化される）
+    */
+  // 4.6.3 Eval as a Monad
+  /**
+    * 他のすべてのモナドと同様に、Evalのmap関数とflatMap関数はチェーンに計算を追加する
+    */
+//  import cats.Eval
+//
+//  def main(args: Array[String]): Unit = {
+//    val greeting = Eval
+//      .always { println("Step 1"); "Hello" }
+//      .map { str =>
+//        println("Step 2"); s"$str world"
+//      }
+//
+//    // Eval.alwaysなので、上記のgreetingの宣言時には評価せず、以下で呼び出した時に評価する
+//    println(greeting.value)
+//    // Step 1
+//    // Step 2
+//    // Hello world
+//  }
+
+  /**
+    *
+    */
+//  import cats.Eval
+//
+//  def main(args: Array[String]): Unit = {
+//    val ans = for {
+//      a <- Eval.now { println("Calculating A"); 40 }
+//      b <- Eval.always { println("Calculating B"); 2 }
+//    } yield {
+//      println("Adding A and B")
+//      a + b
+//    }
+//
+//    // Eval.nowは宣言時に評価され、Eval.alwaysは呼び出し時に評価される
+//
+//    // Calculating A
+//    println(ans.value)
+//    // Calculating B
+//    // Adding A and B
+//    // 42
+//    println(ans.value)
+//    // Calculating B
+//    // Adding A and B
+//    // 42
+//  }
+
+  /**
+    * Evalはmemoize関数を持つ
+    * memoize関数を呼び出すと、それまでの計算結果をキャッシュする
+    */
+//  import cats.Eval
+//
+//  def main(args: Array[String]): Unit = {
+//    val saying = Eval
+//      .always { println("Step 1"); "The cat" }
+//      .map { str =>
+//        println("Step 2"); s"$str sat on"
+//      }
+//      .memoize
+//      .map { str =>
+//        println("Step 3"); s"$str the mat"
+//      }
+//
+//    println(saying.value)
+//    // Step 1
+//    // Step 2
+//    // Step 3
+//    // The cat sat on the mat
+//    println(saying.value)
+//    // Step 3
+//    // The cat sat on the mat
+//
+//    // memoizeによって、`println("Step 2"); s"$str sat on"`までの計算結果をキャッシュしている
+//  }
+
+  // 4.6.4 Trampolining and Eval.defer
+  /**
+    * Evalはmap関数とflatMap関数がトランポリンされる
+    * これは、スタックフレームを消費することなく、map関数とflatMap関数の呼び出しを任意にネストできる
+    * これを「スタックの安全性」と呼ぶ
+    */
+//  def factorial(n: BigInt): BigInt = if (n == 1) n else n * factorial(n - 1)
+//  factorial(50000) // StackOverflowError
+
+  /**
+    * factorial関数をスタックセーフに実装し直す
+    */
+//  import cats.Eval
+//
+//  def factorial(n: BigInt): Eval[BigInt] =
+//    if (n == 1) Eval.now(n)
+//    else factorial(n - 1).map(_ * n)
+//
+//  factorial(50000).value // StackOverflowError
+
+  /**
+    * 上記だとまだStackOverflowErrorになってしまう
+    * これは、map関数を呼び出す前にfactorialの再帰呼び出しを行っているからである
+    *
+    * Eval.deferを使って書き直す
+    */
+//  import cats.Eval
+//
+//  def factorial(n: BigInt): Eval[BigInt] =
+//    if (n == 1) Eval.now(n)
+//    else Eval.defer(factorial(n - 1).map(_ * n))
+//
+//  factorial(50000).value // StackOverflowErrorにならない
+
+  /**
+    * Eval.deferはヒープ上にオブジェクトのチェーンを作成することで、スタックの消費を回避する
+    * よって、無制限に使えるわけではなく、スタックの代わりにヒープのサイズによって制限される
+    */
+  // 4.6.5 Exercise: Safer Folding using Eval
+  /**
+    * foldRightをEvalを使ってスタックセーフに実装せよ
+    */
+  // 答え見た
+//  import cats.Eval
+//
+//  def foldRightEval[A, B](as: List[A], acc: Eval[B])(
+//      fn: (A, Eval[B]) => Eval[B]): Eval[B] =
+//    as match {
+//      case head :: tail => Eval.defer(fn(head, foldRightEval(tail, acc)(fn)))
+//      case Nil          => acc
+//    }
+//
+//  def foldRight[A, B](as: List[A], acc: B)(fn: (A, B) => B): B =
+//    foldRightEval(as, Eval.now(acc)) { (a, b) =>
+//      b.map(fn(a, _))
+//    }.value
+//
+//  foldRight((1 to 100000).toList, 0L)(_ + _) // StackOverflowErrorにならない
+
 }
