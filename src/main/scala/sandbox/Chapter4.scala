@@ -835,4 +835,326 @@ object Chapter4 {
 //
 //  foldRight((1 to 100000).toList, 0L)(_ + _) // StackOverflowErrorにならない
 
+  // 4.7 The Writer Monad
+  /**
+    * cats.data.Writerを使用して、評価に関するメッセージ、エラー、追加データなどを記録し、最終結果とログを抽出できる
+    */
+  // 4.7.1 Creating and Unpacking Writers
+//  import cats.data.Writer
+//
+//  def main(args: Array[String]): Unit = {
+//    println(
+//      Writer(Vector("It was the best of times", "it was the worst of times"),
+//             1859))
+//    // WriterT((Vector(It was the best of times, it was the worst of times),1859))
+//  }
+
+  /**
+    * 上記の実行結果を見ると、WriterではなくWriterTという型になっている
+    * WriterはWriterTの型エイリアスであるため、以下のように書ける
+    */
+//  import cats.data.WriterT
+//  import cats.Id
+//
+//  type Writer[W, A] = WriterT[Id, W, A]
+
+  /**
+    * Catsは、ログまたは結果のみを指定するWriterを作成する手段を提供する
+    * もし、結果のみがほしい場合は、pure構文を使用できる
+    * これを使うには、スコープ内にMonoid[W]が必要になる
+    * Monoid[W]により、空のログを生成する手段を得られる
+    */
+//  import cats.data.Writer
+//  import cats.instances.vector._
+//  import cats.syntax.applicative._
+//
+//  type Logged[A] = Writer[Vector[String], A]
+//
+//  def main(args: Array[String]): Unit = {
+//    println(123.pure[Logged]) // WriterT((Vector(),123))
+//  }
+
+  /**
+    * また、結果は不要で、ログのみがほしい場合は、tell構文を使用してWriter[Unit]を作成できる
+    */
+//  import cats.syntax.writer._
+//
+//  def main(args: Array[String]): Unit = {
+//    println(Vector("msg1", "msg2", "msg3").tell) // WriterT((Vector(msg1, msg2, msg3),()))
+//  }
+
+  /**
+    * 結果とログの両方がほしい場合、Writer.applyもしくは、writer構文を使用できる
+    */
+//  import cats.data.Writer
+//  import cats.syntax.writer._
+//
+//  def main(args: Array[String]): Unit = {
+//    val a = Writer(Vector("msg1", "msg2", "msg3"), 123)
+//    val b = 123.writer(Vector("msg1", "msg2", "msg3"))
+//
+//    println(a) // WriterT((Vector(msg1, msg2, msg3),123))
+//    println(b) // WriterT((Vector(msg1, msg2, msg3),123))
+//  }
+
+  /**
+    * value関数とwritten関数を使用して、Writerから結果とログを抽出できる
+    * また、run関数を使って、結果とログの両方を抽出できる
+    */
+//  import cats.data.Writer
+//  import cats.syntax.writer._
+//
+//  def main(args: Array[String]): Unit = {
+//    val a = Writer(Vector("msg1", "msg2", "msg3"), 123)
+//    val b = 123.writer(Vector("msg1", "msg2", "msg3"))
+//
+//    println(a.value) // 123
+//    println(b.written) // Vector(msg1, msg2, msg3)
+//    println(b.run) // (Vector(msg1, msg2, msg3),123)
+//  }
+
+  // 4.7.2 Composing and Transforming Writers
+  /**
+    * Writerのログは、mapまたはflatMapするときに保存される
+    */
+//  import cats.data.Writer
+//  import cats.instances.vector._
+//  import cats.syntax.applicative._
+//  import cats.syntax.writer._
+//
+//  type Logged[A] = Writer[Vector[String], A]
+//
+//  def main(args: Array[String]): Unit = {
+//    val writer1 = for {
+//      a <- 10.pure[Logged]
+//      _ <- Vector("a", "b", "c").tell
+//      b <- 32.writer(Vector("x", "y", "z"))
+//    } yield a + b
+//
+//    println(writer1.run) // (Vector(a, b, c, x, y, z),42)
+//
+//    // mapWritten関数でWriterのログを変換できる
+//    val writer2 = writer1.mapWritten(_.map(_.toUpperCase))
+//    println(writer2.run) // (Vector(A, B, C, X, Y, Z),42)
+//
+//    // bimapかmapBothを使って、ログと結果の両方を変換できる
+//    val writer3 = writer1.bimap(
+//      log => log.map(_.toUpperCase),
+//      res => res * 100
+//    )
+//    println(writer3.run) // (Vector(A, B, C, X, Y, Z),4200)
+//
+//    val writer4 = writer1.mapBoth { (log, res) =>
+//      val log2 = log.map(_ + "!")
+//      val res2 = res * 1000
+//      (log2, res2)
+//    }
+//    println(writer4.run) // (Vector(a!, b!, c!, x!, y!, z!),42000)
+//
+//    // reset関数でログをクリアできる
+//    val writer5 = writer1.reset
+//    println(writer5.run) // (Vector(),42)
+//
+//    // swap関数でログと結果を入れ替えることができる
+//    val writer6 = writer1.swap
+//    println(writer6.run) // (42,Vector(a, b, c, x, y, z))
+//  }
+
+  // 4.7.3 Exercise: Show Your Working
+  /**
+    * 階乗の計算を並列実行しても、それぞれ個別にログに保存できるようにせよ
+    */
+//  def slowly[A](body: => A) =
+//    try body
+//    finally Thread.sleep(100)
+//
+////  def factorial(n: Int): Int = {
+////    val ans = slowly(if (n == 0) 1 else n * factorial(n - 1))
+////    println(s"fact $n $ans")
+////    ans
+////  }
+////
+////  def main(args: Array[String]): Unit = {
+////    println(factorial(5))
+////    // fact 0 1
+////    // fact 1 1
+////    // fact 2 2
+////    // fact 3 6
+////    // fact 4 24
+////    // fact 5 120
+////    // 120
+////
+////    import scala.concurrent._
+////    import scala.concurrent.ExecutionContext.Implicits._
+////    import scala.concurrent.duration._
+////
+////    // 並列で2つのfactorialを実行する
+////  val res = Await.result(
+////    Future.sequence(Vector(Future(factorial(5)), Future(factorial(5)))),
+////    5.seconds)
+////
+////    // 結果がどちらのfactorialで出力されたものか特定が困難になる
+////    println(res)
+////    // fact 0 1
+////    // fact 0 1
+////    // fact 1 1
+////    // fact 1 1
+////    // fact 2 2
+////    // fact 2 2
+////    // fact 3 6
+////    // fact 3 6
+////    // fact 4 24
+////    // fact 4 24
+////    // fact 5 120
+////    // fact 5 120
+////    // Vector(120, 120)
+////  }
+//
+//  // 答え見た
+//  import cats.data.Writer
+//  import cats.syntax.applicative._
+//  import cats.syntax.writer._
+//  import cats.instances.vector._
+//  import scala.concurrent._
+//  import scala.concurrent.ExecutionContext.Implicits._
+//  import scala.concurrent.duration._
+//
+//  type Logged[A] = Writer[Vector[String], A]
+//
+//  def factorial(n: Int): Logged[Int] =
+//    for {
+//      ans <- if (n == 0) 1.pure[Logged]
+//      else slowly(factorial(n - 1).map(_ * n))
+//      _ <- Vector(s"fact $n $ans").tell
+//    } yield ans
+//
+//  def main(args: Array[String]): Unit = {
+//    val res = Await.result(
+//      Future
+//        .sequence(Vector(Future(factorial(5)), Future(factorial(5))))
+//        .map(_.map(_.written)),
+//      5.seconds)
+//
+//    // ログを個別に保存できている
+//    println(res)
+//    // Vector(
+//    //   Vector(fact 0 1, fact 1 1, fact 2 2, fact 3 6, fact 4 24, fact 5 120),
+//    //   Vector(fact 0 1, fact 1 1, fact 2 2, fact 3 6, fact 4 24, fact 5 120)
+//    // )
+//  }
+
+  // 4.8 The Reader Monad
+  /**
+    * Readerの一般的な用途の1つは、依存性注入
+    */
+  // 4.8.1 Creating and Unpacking Readers
+  /**
+    * Reader.applyコンストラクターを使って、関数A => BからReader[A, B]を作成できる
+    */
+//  import cats.data.Reader
+//
+//  final case class Cat(name: String, favoriteFood: String)
+//
+//  val catName: Reader[Cat, String] = Reader(cat => cat.name)
+//
+//  def main(args: Array[String]): Unit = {
+//    println(catName.run(Cat("Garfield", "lasagne"))) // Garfield
+//  }
+
+  // 4.8.2 Composing Readers
+  /**
+    * map関数は、Readerの計算を拡張する
+    */
+//  import cats.data.Reader
+//
+//  final case class Cat(name: String, favoriteFood: String)
+//  val catName: Reader[Cat, String] = Reader(cat => cat.name)
+//
+//  def main(args: Array[String]): Unit = {
+//    val greetKitty: Reader[Cat, String] = catName.map(name => s"Hello ${name}")
+//
+//    println(greetKitty.run(Cat("Heathcliff", "junk food"))) // Hello Heathcliff
+//  }
+
+  /**
+    * flatMap関数は、同じ型に依存するReaderを組み合わせることができる
+    */
+//  import cats.data.Reader
+//
+//  final case class Cat(name: String, favoriteFood: String)
+//  val catName: Reader[Cat, String] = Reader(cat => cat.name)
+//
+//  def main(args: Array[String]): Unit = {
+//    val greetKitty: Reader[Cat, String] = catName.map(name => s"Hello ${name}")
+//    val feedKitty: Reader[Cat, String] = Reader(
+//      cat => s"Have a nice bowl of ${cat.favoriteFood}")
+//
+//    val greetAndFeed: Reader[Cat, String] =
+//      for {
+//        greet <- greetKitty
+//        feed <- feedKitty
+//      } yield s"$greet. $feed."
+//
+//    println(greetAndFeed(Cat("Garfield", "lasagne")))
+//    // Hello Garfield. Have a nice bowl of lasagne.
+//
+//    println(greetAndFeed(Cat("Heathcliff", "junk food")))
+//    // Hello Heathcliff. Have a nice bowl of junk food.
+//  }
+
+  // 4.8.3 Exercise: Hacking on Readers
+  /**
+    * 簡単なログインシステムを構築する
+    */
+//  final case class Db(
+//      usernames: Map[Int, String],
+//      passwords: Map[String, String]
+//  )
+//
+//  // 答え見た
+//
+//  // 入力としてDBを使用するReaderの型エイリアスDbReaderを作成せよ
+//  import cats.data.Reader
+//  type DbReader[A] = Reader[Db, A]
+//
+//  // IntのユーザーIDのユーザー名を検索し、ユーザー名のパスワードを検索する関数を作成せよ
+//  def findUsername(userId: Int): DbReader[Option[String]] =
+//    Reader(db => db.usernames.get(userId))
+//
+//  def checkPassword(username: String, password: String): DbReader[Boolean] =
+//    Reader(db => db.passwords.get(username).contains(password))
+//
+//  // ログインされていたらTrue、ログインされていなければFalseを返すcheckLogin関数を作成せよ
+//  import cats.syntax.applicative._
+//  def checkLogin(userId: Int, password: String): DbReader[Boolean] =
+//    for {
+//      username <- findUsername(userId)
+//      passwordOk <- username
+//        .map { username =>
+//          checkPassword(username, password)
+//        }
+//        .getOrElse { false.pure[DbReader] }
+//    } yield passwordOk
+//
+//  def main(args: Array[String]): Unit = {
+//    val users = Map(1 -> "dade", 2 -> "kate", 3 -> "margo")
+//    val passwords =
+//      Map("dade" -> "zerocool", "kate" -> "acidburn", "margo" -> "secret")
+//    val db = Db(users, passwords)
+//
+//    println(checkLogin(1, "zerocool").run(db)) // true
+//    println(checkLogin(4, "davinci").run(db)) // false
+//  }
+
+  // 4.8.4 When to Use Readers?
+  /**
+  * ReaderはDIを行うためのツールを提供する
+  * 各ステップがReaderインスタンスを返し、mapおよびflatMapでチェーンして、依存関係を入力として受け入れる関数を作成する
+  *
+  * Readerは次の状況で最も役に立つ
+  * ・関数で簡単に表現できるプログラムを構築している
+  * ・パラメーターの注入を先延ばしにしたい（定義だけしておいて、後でパラメーターを設定する）
+  * ・ステップごとにテストしたい
+  */
+
 }
