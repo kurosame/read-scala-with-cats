@@ -1148,13 +1148,294 @@ object Chapter4 {
 
   // 4.8.4 When to Use Readers?
   /**
-  * ReaderはDIを行うためのツールを提供する
-  * 各ステップがReaderインスタンスを返し、mapおよびflatMapでチェーンして、依存関係を入力として受け入れる関数を作成する
-  *
-  * Readerは次の状況で最も役に立つ
-  * ・関数で簡単に表現できるプログラムを構築している
-  * ・パラメーターの注入を先延ばしにしたい（定義だけしておいて、後でパラメーターを設定する）
-  * ・ステップごとにテストしたい
-  */
+    * ReaderはDIを行うためのツールを提供する
+    * 各ステップがReaderインスタンスを返し、mapおよびflatMapでチェーンして、依存関係を入力として受け入れる関数を作成する
+    *
+    * Readerは次の状況で最も役に立つ
+    * ・関数で簡単に表現できるプログラムを構築している
+    * ・パラメーターの注入を先延ばしにしたい（定義だけしておいて、後でパラメーターを設定する）
+    * ・ステップごとにテストしたい
+    */
 
+  // 4.9 The State Monad
+  // 4.9.1 Creating and Unpacking State
+  /**
+    * State[S, A]のインスタンスは`S => (S, A)`型を表す
+    * Sは状態の型であり、Aは結果の型である
+    */
+//  import cats.data.State
+//
+//  val a = State[Int, String] { state =>
+//    (state, s"The state is $state")
+//  }
+
+  /**
+    * Stateのインスタンスは次の2つのことを行う関数である
+    * ・入力状態を出力状態に変換する
+    * ・結果を算出する
+    *
+    * 初期状態を与えるとrunできる
+    */
+//  import cats.data.State
+//
+//  def main(args: Array[String]): Unit = {
+//    val a = State[Int, String] { state =>
+//      (state, s"The state is $state")
+//    }
+//    // 各run関数はEvalインスタンスを返すので、valueで結果を取り出す
+//    val (state, result) = a.run(10).value
+//    val justTheState = a.runS(10).value
+//    val justTheResult = a.runA(10).value
+//
+//    println(state) // 10
+//    println(result) // The state is 10
+//    println(justTheState) // 10
+//    println(justTheResult) // The state is 10
+//  }
+
+  // 4.9.2 Composing and Transforming State
+  /**
+    * Stateのmap関数とflatMap関数は、あるインスタンスから別のインスタンスに状態をスレッド化する
+    */
+//  import cats.data.State
+//
+//  def main(args: Array[String]): Unit = {
+//    val step1 = State[Int, String] { num =>
+//      val ans = num + 1
+//      (ans, s"Result of step1: $ans")
+//    }
+//
+//    val step2 = State[Int, String] { num =>
+//      val ans = num * 2
+//      (ans, s"Result of step2: $ans")
+//    }
+//
+//    val both = for {
+//      a <- step1
+//      b <- step2
+//    } yield (a, b)
+//
+//    val (state, result) = both.run(20).value
+//    println(state) // 42
+//    println(result) // (Result of step1: 21,Result of step2: 42)
+//  }
+
+  /**
+    * Catsは、基本的なステップを作成するため、いくつかの便利なコンストラクターを提供する
+    */
+//  import cats.data.State
+//
+//  def main(args: Array[String]): Unit = {
+//    // getは状態を抽出する
+//    val getDemo = State.get[Int]
+//    println(getDemo.run(10).value) // (10,10)
+//
+//    // setは状態を更新し、結果としてUnitを返す
+//    val setDemo = State.set[Int](30)
+//    println(setDemo.run(10).value) // (30,())
+//
+//    // pureは状態を無視し、提供された結果を返す
+//    val pureDemo = State.pure[Int, String]("Result")
+//    println(pureDemo.run(10).value) // (10,Result)
+//
+//    // inspectは変換関数を介して状態を抽出する
+//    val inspectDemo = State.inspect[Int, String](x => s"${x}!")
+//    println(inspectDemo.run(10).value) // (10,10!)
+//
+//    // modifyは更新関数を使用して状態を更新する
+//    val modifyDemo = State.modify[Int](_ + 1)
+//    println(modifyDemo.run(10).value) // (11,())
+//
+//    import State._
+//    val program: State[Int, (Int, Int, Int)] = for {
+//      a <- get[Int]
+//      _ <- set[Int](a + 1)
+//      b <- get[Int]
+//      _ <- modify[Int](_ + 1)
+//      c <- inspect[Int, Int](_ * 1000)
+//    } yield (a, b, c)
+//
+//    val (state, result) = program.run(1).value
+//    println(state) // 3
+//    println(result) // (1,2,3000)
+//  }
+
+  // 4.9.3 Exercise: Post-Order Calculator
+  /**
+    * Post-Orderの計算機を実装する
+    * Post-Order式とは以下のようにオペランドの後に演算子を記述する数学表記である
+    * 1 2 +
+    *
+    * 数字の場合、それをスタックにプッシュする
+    * 演算子の場合、スタックから2つのオペランドをポップして計算し、結果をスタックにプッシュする
+    *
+    * たとえば、(1 + 2) * 3)は括弧を使用せず、次のように評価できる
+    * 1 2 + 3 *
+    * 2 + 3 *
+    * + 3 *
+    * 3 3 *
+    * 3 *
+    * *
+    * この時スタックには9が入っている
+    */
+  /**
+    * スタック上の変換と中間結果をStateインスタンスで表せる
+    */
+//  // 答え見た
+//  import cats.data.State
+//
+//  type CalcState[A] = State[List[Int], A]
+//
+//  def operand(num: Int): CalcState[Int] =
+//    State[List[Int], Int] { stack =>
+//      (num :: stack, num)
+//    }
+//
+//  def operator(func: (Int, Int) => Int): CalcState[Int] =
+//    State[List[Int], Int] {
+//      case b :: a :: tail =>
+//        val ans = func(a, b)
+//        (ans :: tail, ans)
+//      case _ => sys.error("Fail!")
+//    }
+//
+//  def evalOne(sym: String): CalcState[Int] =
+//    sym match {
+//      case "+" => operator(_ + _)
+//      case "-" => operator(_ - _)
+//      case "*" => operator(_ * _)
+//      case "/" => operator(_ / _)
+//      case num => operand(num.toInt)
+//    }
+//
+//  import cats.syntax.applicative._
+//  def evalAll(input: List[String]): CalcState[Int] =
+//    input.foldLeft(0.pure[CalcState]) { (a, b) =>
+//      a.flatMap(_ => evalOne(b))
+//    }
+//
+//  def evalInput(input: String): Int =
+//    evalAll(input.split(" ").toList).runA(Nil).value
+//
+//  def main(args: Array[String]): Unit = {
+//    val program = for {
+//      _ <- evalOne("1")
+//      _ <- evalOne("2")
+//      ans <- evalOne("+")
+//    } yield ans
+//    println(program.runA(Nil).value) // 3
+//
+//    val multistageProgram = evalAll(List("1", "2", "+", "3", "*"))
+//    println(multistageProgram.runA(Nil).value) // 9
+//
+//    println(evalInput("1 2 + 3 4 + *")) // 21
+//  }
+
+  // 4.10 Defining Custom Monads
+  /**
+    * flatMap、pure、tailRecMの3つの関数の実装を提供することでカスタム型のモナドを定義できる
+    * Monad[Option]の例を以下に示す
+    */
+//  import cats.Monad
+//  import scala.annotation.tailrec
+//
+//  val optionMonad = new Monad[Option] {
+//    def flatMap[A, B](opt: Option[A])(fn: A => Option[B]): Option[B] =
+//      opt flatMap fn
+//
+//    def pure[A](opt: A): Option[A] = Some(opt)
+//
+//    // tailRecMはfnの結果がRightを返すまで、再帰的に自分自身を呼び出す必要がある
+//    @tailrec
+//    def tailRecM[A, B](a: A)(fn: A => Option[Either[A, B]]): Option[B] =
+//      fn(a) match {
+//        case None           => None
+//        case Some(Left(a1)) => tailRecM(a1)(fn)
+//        case Some(Right(b)) => Some(b)
+//      }
+//  }
+
+  /**
+    * 例として、flatMapでretry関数を定義する
+    * retryは停止する必要があることを示すまで関数を呼び続ける
+    */
+//  import cats.Monad
+//  import cats.syntax.flatMap._
+//  import cats.instances.option._
+//
+//  def retry[F[_]: Monad, A](start: A)(f: A => F[A]): F[A] =
+//    f(start).flatMap { a =>
+//      retry(a)(f)
+//    }
+//
+//  def main(args: Array[String]): Unit = {
+//    println(retry(100)(a => if (a == 0) None else Some(a - 1))) // None
+//    // retryはスタックセーフではないので、以下はStackOverflowErrorになる
+//    // retry(100000)(a => if(a == 0) None else Some(a - 1)) // StackOverflowError
+//  }
+
+  /**
+    * tailRecMを使って、retryを書き直す
+    */
+//  import cats.Monad
+//  import cats.syntax.functor._
+//  import cats.instances.option._
+//
+//  def retryTailRecM[F[_]: Monad, A](start: A)(f: A => F[A]): F[A] =
+//    Monad[F].tailRecM(start) { a =>
+//      f(a).map(a2 => Left(a2))
+//    }
+//
+//  def main(args: Array[String]): Unit = {
+//    val res = retryTailRecM(100000)(a => if (a == 0) None else Some(a - 1))
+//    println(res) // None
+//  }
+
+  /**
+    * iterateWhileMを使って、retryを書き直す
+    */
+//  import cats.Monad
+//  import cats.syntax.monad._
+//  import cats.instances.option._
+//
+//  def retryM[F[_]: Monad, A](start: A)(f: A => F[A]): F[A] =
+//    start.iterateWhileM(f)(_ => true)
+//
+//  def main(args: Array[String]): Unit = {
+//    val res = retryM(100000)(a => if (a == 0) None else Some(a - 1))
+//    println(res) // None
+//  }
+
+  // 4.10.1 Exercise: Branching out Further with Monads
+  /**
+    * Treeデータ型のモナドを書け
+    */
+//  sealed trait Tree[+A]
+//
+//  final case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
+//  final case class Leaf[A](value: A) extends Tree[A]
+//
+//  def branch[A](left: Tree[A], right: Tree[A]): Tree[A] = Branch(left, right)
+//  def leaf[A](value: A): Tree[A] = Leaf(value)
+//
+//  // 答え見た
+//  import cats.Monad
+//
+//  implicit val treeMonad = new Monad[Tree] {
+//    def pure[A](value: A): Tree[A] = Leaf(value)
+//
+//    def flatMap[A, B](tree: Tree[A])(func: A => Tree[B]): Tree[B] =
+//      tree match {
+//        case Branch(l, r) => Branch(flatMap(l)(func), flatMap(r)(func))
+//        case Leaf(value)  => func(value)
+//      }
+//
+//    def tailRecM[A, B](a: A)(func: A => Tree[Either[A, B]]): Tree[B] =
+//      flatMap(func(a)) {
+//        case Left(value)  => tailRecM(value)(func)
+//        case Right(value) => Leaf(value)
+//      }
+//  }
+
+  // 4.11 Summary
 }
