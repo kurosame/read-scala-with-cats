@@ -219,41 +219,41 @@ object Chapter5 {
     * 様々なコンテキストでモナドを操作するため、アンパックとリパックを行う必要が生じる可能性がある
     * ローカルでモナド変換子を定義することで使用するモナド変換子を開発者が選択することができる
     */
-  import cats.data.Writer
-  import cats.instances.list._
-
-  type Logged[A] = Writer[List[String], A]
-
-  def parseNumber(str: String): Logged[Option[Int]] =
-    util.Try(str.toInt).toOption match {
-      case Some(num) => Writer(List(s"Read $str"), Some(num))
-      case None      => Writer(List(s"Failed on $str"), None)
-    }
-
-  // モナド変換子を使用する型はモナドでないといけない
-  // たとえば、OptionT.flatMapで内側のAを取るにはモナドの結合則を満たしている必要がある
-  def addAll(a: String, b: String, c: String): Logged[Option[Int]] = {
-    import cats.data.OptionT
-
-    val result: OptionT[Logged, Int] = for {
-      // Logged[Option[A]]のように型がネストしていても、OptionTに変換してflatMapすればAが取れる
-      // つまり、flatMapを2回書く必要がなくなる
-      a: Int <- OptionT(parseNumber(a))
-      b <- OptionT(parseNumber(b))
-      c <- OptionT(parseNumber(c))
-    } yield a + b + c
-
-    // モナド変換子を呼び出し元が使えない場合があるので、valueでアンパックしておく
-    result.value
-  }
-
-  def main(args: Array[String]): Unit = {
-    val result1 = addAll("1", "2", "3")
-    val result2 = addAll("1", "a", "3")
-
-    println(result1) // WriterT((List(Read 1, Read 2, Read 3),Some(6)))
-    println(result2) // WriterT((List(Read 1, Failed on a),None))
-  }
+//  import cats.data.Writer
+//  import cats.instances.list._
+//
+//  type Logged[A] = Writer[List[String], A]
+//
+//  def parseNumber(str: String): Logged[Option[Int]] =
+//    util.Try(str.toInt).toOption match {
+//      case Some(num) => Writer(List(s"Read $str"), Some(num))
+//      case None      => Writer(List(s"Failed on $str"), None)
+//    }
+//
+//  // モナド変換子を使用する型はモナドでないといけない
+//  // たとえば、OptionT.flatMapで内側のAを取るにはモナドの結合則を満たしている必要がある
+//  def addAll(a: String, b: String, c: String): Logged[Option[Int]] = {
+//    import cats.data.OptionT
+//
+//    val result: OptionT[Logged, Int] = for {
+//      // Logged[Option[A]]のように型がネストしていても、OptionTに変換してflatMapすればAが取れる
+//      // つまり、flatMapを2回書く必要がなくなる
+//      a: Int <- OptionT(parseNumber(a))
+//      b <- OptionT(parseNumber(b))
+//      c <- OptionT(parseNumber(c))
+//    } yield a + b + c
+//
+//    // モナド変換子を呼び出し元が使えない場合があるので、valueでアンパックしておく
+//    result.value
+//  }
+//
+//  def main(args: Array[String]): Unit = {
+//    val result1 = addAll("1", "2", "3")
+//    val result2 = addAll("1", "a", "3")
+//
+//    println(result1) // WriterT((List(Read 1, Read 2, Read 3),Some(6)))
+//    println(result2) // WriterT((List(Read 1, Failed on a),None))
+//  }
 
   // 5.4 Exercise: Monads: Transform and Roll Out
 
