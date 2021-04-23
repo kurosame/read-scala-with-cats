@@ -1,27 +1,27 @@
-package chapter3
+package sandbox
 
 object Chapter3 {
   // 3 Functors
   // 3.1 Examples of Functors
   /**
-    * ファンクターはmap関数を持つものである
-    * map関数は、リスト内のすべての値を一度に変換するものと考える必要がある
-    * 値は変更されるが、リストの構造（要素の数と順序）は同じである
-    * 同様にOptionのmapは、SomeとNoneのコンテキストは変わらないが、中身を変換する
-    * EitherのLeftとRightも同様
-    *
-    * mapはコンテキストを変更しないため、mapを繰り返し呼び出して、複数の計算をシーケンスできる
-    * List(1, 2, 3).map(n => n + 1).map(n => n * 2).map(n => s"${n}!") // List("4!", "6!", "8!")
-    */
+   * ファンクターはmap関数を持つものである
+   * map関数は、リスト内のすべての値を一度に変換するものと考える必要がある
+   * 値は変更されるが、リストの構造（要素の数と順序）は同じである
+   * 同様にOptionのmapは、SomeとNoneのコンテキストは変わらないが、中身を変換する
+   * EitherのLeftとRightも同様
+   *
+   * mapはコンテキストを変更しないため、mapを繰り返し呼び出して、複数の計算をシーケンスできる
+   * List(1, 2, 3).map(n => n + 1).map(n => n * 2).map(n => s"${n}!") // List("4!", "6!", "8!")
+   */
   // 3.2 More Examples of Functors
   /**
-    * Futureは、非同期計算をキューに入れ、非同期計算をシーケンスできるファンクターである
-    * Futureが動いている時、内部の状態について保証はされない
-    * Futureでラップされた計算は、進行中・完了・拒否のいずれかである可能性がある
-    * Futureが完了すると、すぐにmap関数を呼び出せる
-    * そうでない場合、スレッドプールが関数呼び出しをキューに入れ、後で実行される
-    * 関数がいつ呼び出されるか分からないが、どのような順序で呼び出されるかは分かっている
-    */
+   * Futureは、非同期計算をキューに入れ、非同期計算をシーケンスできるファンクターである
+   * Futureが動いている時、内部の状態について保証はされない
+   * Futureでラップされた計算は、進行中・完了・拒否のいずれかである可能性がある
+   * Futureが完了すると、すぐにmap関数を呼び出せる
+   * そうでない場合、スレッドプールが関数呼び出しをキューに入れ、後で実行される
+   * 関数がいつ呼び出されるか分からないが、どのような順序で呼び出されるかは分かっている
+   */
 //  def main(args: Array[String]): Unit = {
 //    import scala.concurrent.{Future, Await}
 //    import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,14 +34,14 @@ object Chapter3 {
 //  }
 
   /**
-    * Futureは、参照透過性ではないため、純粋な関数型プログラミングとは言えない
-    * Futureは、常に計算結果をキャッシュする機能がないので、副作用がある計算をラップすると、予測できない結果が得られる可能性がある
-    */
+   * Futureは、参照透過性ではないため、純粋な関数型プログラミングとは言えない
+   * Futureは、常に計算結果をキャッシュする機能がないので、副作用がある計算をラップすると、予測できない結果が得られる可能性がある
+   */
   /**
-    * Functions
-    * 単一引数の関数Function1もファンクターである
-    * Function1のマッピングは関数の合成である
-    */
+   * Functions
+   * 単一引数の関数Function1もファンクターである
+   * Function1のマッピングは関数の合成である
+   */
 //  def main(args: Array[String]): Unit = {
 //    import cats.instances.function._
 //    import cats.syntax.functor._
@@ -55,11 +55,11 @@ object Chapter3 {
 //  }
 
   /**
-    * 関数の合成はシーケンスである
-    * 単一の操作を実行する関数から始め、mapを使用するたびに、チェーンに別の操作を追加する
-    * map自体はどの操作も実行できないが、すべての操作を順番に実行させることができる
-    * Futureと同様の遅延キューイングと考えることができる
-    */
+   * 関数の合成はシーケンスである
+   * 単一の操作を実行する関数から始め、mapを使用するたびに、チェーンに別の操作を追加する
+   * map自体はどの操作も実行できないが、すべての操作を順番に実行させることができる
+   * Futureと同様の遅延キューイングと考えることができる
+   */
 //  def main(args: Array[String]): Unit = {
 //    import cats.instances.function._
 //    import cats.syntax.functor._
@@ -75,30 +75,30 @@ object Chapter3 {
 
   // 3.3 Definition of a Functor
   /**
-    * Functorは、シーケンス計算をカプセル化するクラスである
-    * Functorは、F[A]型であり、(A => B) => F[B]型のmap操作を持つ
-    */
+   * Functorは、シーケンス計算をカプセル化するクラスである
+   * Functorは、F[A]型であり、(A => B) => F[B]型のmap操作を持つ
+   */
 //  trait Functor[F[_]] {
 //    def map[A, B](fa: F[A])(f: A => B): F[B]
 //  }
 
   /**
-    * Functorは以下の法則を持つ
-    *
-    * fa.map(a => a) == fa
-    * aがaとなる関数（恒等関数）を使ってmapしても、それは何もしていないことと等しい
-    *
-    * fa.map(g(f(_))) == fa.map(f).map(g)
-    * 「gとfを関数合成したものをmapする」と「fをmapして、その後gをmapする」の2つは等しい
-    */
+   * Functorは以下の法則を持つ
+   *
+   * fa.map(a => a) == fa
+   * aがaとなる関数（恒等関数）を使ってmapしても、それは何もしていないことと等しい
+   *
+   * fa.map(g(f(_))) == fa.map(f).map(g)
+   * 「gとfを関数合成したものをmapする」と「fをmapして、その後gをmapする」の2つは等しい
+   */
   // 3.4 Aside: Higher Kinds and Type Constructors
 
   // 3.5 Functors in Cats
   // 3.5.1 The Functor Type Class and Instances
   /**
-    * ファンクターの型クラスは、`cats.Functor`である
-    * インスタンスは、`cats.instances`パッケージで型ごとに配置されている
-    */
+   * ファンクターの型クラスは、`cats.Functor`である
+   * インスタンスは、`cats.instances`パッケージで型ごとに配置されている
+   */
 //  import cats.Functor
 //  import cats.instances.list._
 //  import cats.instances.option._
@@ -117,9 +117,9 @@ object Chapter3 {
 //  }
 
   /**
-    * Functorはlift関数を提供する
-    * これはファンクター上で動作し、`A => B`の関数を`F[A] => F[B]`の関数に変換する
-    */
+   * Functorはlift関数を提供する
+   * これはファンクター上で動作し、`A => B`の関数を`F[A] => F[B]`の関数に変換する
+   */
 //  def main(args: Array[String]): Unit = {
 //    import cats.Functor
 //    import cats.instances.option._
@@ -134,8 +134,8 @@ object Chapter3 {
 
   // 3.5.2 Functor Syntax
   /**
-    * Functorはmapを提供する
-    */
+   * Functorはmapを提供する
+   */
 //  def main(args: Array[String]): Unit = {
 //    import cats.instances.function._
 //    import cats.syntax.functor._
@@ -149,8 +149,8 @@ object Chapter3 {
 //  }
 
   /**
-    * 別の例を挙げる
-    */
+   * 別の例を挙げる
+   */
 //  def main(args: Array[String]): Unit = {
 //    import cats.Functor
 //    import cats.syntax.functor._
@@ -166,8 +166,8 @@ object Chapter3 {
 //  }
 
   /**
-    * 上記の例がどのように動くか説明するために、`cats.syntax.functor`のmap関数の定義の簡易版を見てみる
-    */
+   * 上記の例がどのように動くか説明するために、`cats.syntax.functor`のmap関数の定義の簡易版を見てみる
+   */
 //  import cats.Functor
 //  implicit class FunctorOps[F[_], A](src: F[A]) {
 //    def map[B](func: A => B)(implicit functor: Functor[F]): F[B] =
@@ -175,16 +175,16 @@ object Chapter3 {
 //  }
 
   /**
-    * 以下のコードで、fooはmapを持っていないと仮定すると
-    * foo.map(value => value + 1)
-    *
-    * コンパイラーは、スコープ内にimplicitのFunctorが存在する場合に限り、FunctorOpsでラップして動くようにする
-    * new FunctorOps(foo).map(value => value + 1)
-    *
-    * なお、スコープ内にimplicitのFunctorが存在しない場合は、コンパイラーになる
-    *
-    * mapを持たないBoxの例を以下に示す
-    */
+   * 以下のコードで、fooはmapを持っていないと仮定すると
+   * foo.map(value => value + 1)
+   *
+   * コンパイラーは、スコープ内にimplicitのFunctorが存在する場合に限り、FunctorOpsでラップして動くようにする
+   * new FunctorOps(foo).map(value => value + 1)
+   *
+   * なお、スコープ内にimplicitのFunctorが存在しない場合は、コンパイラーになる
+   *
+   * mapを持たないBoxの例を以下に示す
+   */
 //  import cats.Functor
 //  implicit class FunctorOps[F[_], A](src: F[A]) {
 //    def map[B](func: A => B)(implicit functor: Functor[F]): F[B] =
@@ -201,9 +201,9 @@ object Chapter3 {
 
   // 3.5.3 Instances for Custom Types
   /**
-    * map関数を定義するだけでファンクターを定義できる
-    * OptionのFunctorの例を以下に示す
-    */
+   * map関数を定義するだけでファンクターを定義できる
+   * OptionのFunctorの例を以下に示す
+   */
 //  import cats.Functor
 //
 //  implicit val optionFunctor: Functor[Option] =
@@ -213,8 +213,8 @@ object Chapter3 {
 //    }
 
   /**
-    * FutureのカスタムFunctorを定義する場合、future.mapのimplicitのExecutionContextが必要になる
-    */
+   * FutureのカスタムFunctorを定義する場合、future.mapのimplicitのExecutionContextが必要になる
+   */
 //  import cats.Functor
 //  import scala.concurrent.{Future, ExecutionContext}
 //
@@ -231,9 +231,9 @@ object Chapter3 {
 
   // 3.5.4 Exercise: Branching out with Functors
   /**
-    * 以下の二分木データ型のFunctorを記述せよ
-    * BranchとLeafのインスタンスでコードが期待通りに動くことを確認せよ
-    */
+   * 以下の二分木データ型のFunctorを記述せよ
+   * BranchとLeafのインスタンスでコードが期待通りに動くことを確認せよ
+   */
 //  sealed trait Tree[+A]
 //
 //  final case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
@@ -263,18 +263,18 @@ object Chapter3 {
 //  }
 
   /**
-    * 次に反変ファンクターと不変ファンクターという型クラスを見ていく
-    * ・これまで見てきたFunctorのmapは、チェーンへの変換を追加する
-    * ・反変ファンクターは、チェーンに操作を追加する
-    * ・不変ファンクターは、双方向のチェーンの操作を構築する
-    *
-    * これらは4章のモナドを理解するのには、あまり必要がない
-    * ただし、6章のSemigroupalやApplicativeを理解するのには、役に立つ
-    */
+   * 次に反変ファンクターと不変ファンクターという型クラスを見ていく
+   * ・これまで見てきたFunctorのmapは、チェーンへの変換を追加する
+   * ・反変ファンクターは、チェーンに操作を追加する
+   * ・不変ファンクターは、双方向のチェーンの操作を構築する
+   *
+   * これらは4章のモナドを理解するのには、あまり必要がない
+   * ただし、6章のSemigroupalやApplicativeを理解するのには、役に立つ
+   */
   // 3.5.5 Contravariant Functors and the contramap Method
   /**
-    * 反変ファンクターは、チェーンに操作を「追加」することを表す
-    */
+   * 反変ファンクターは、チェーンに操作を「追加」することを表す
+   */
 //  trait Printable[A] {
 //    def format(value: A): String
 //    def contramap[B](func: B => A): Printable[B] = ???
@@ -283,8 +283,8 @@ object Chapter3 {
 
   // 3.5.5.1 Exercise: Showing off with Contramap
   /**
-    * 上記のPrintableのcontramap関数を実装せよ
-    */
+   * 上記のPrintableのcontramap関数を実装せよ
+   */
 //  // 答え見た
 //  // 外側のformatと内側のformatを区別するため、selfを使う
 //  trait Printable[A] { self =>
@@ -298,8 +298,8 @@ object Chapter3 {
 //  def format[A](value: A)(implicit p: Printable[A]): String = p.format(value)
 
   /**
-    * StringとBooleanのPrintableを定義する
-    */
+   * StringとBooleanのPrintableを定義する
+   */
 //  implicit val stringPrintable: Printable[String] =
 //    new Printable[String] {
 //      def format(value: String): String = s"'${value}'"
@@ -316,9 +316,9 @@ object Chapter3 {
 ////  }
 
   /**
-    * 次にBoxケースクラスのPrintableインスタンスを定義する
-    * implicit defでPrintableを定義せよ
-    */
+   * 次にBoxケースクラスのPrintableインスタンスを定義する
+   * implicit defでPrintableを定義せよ
+   */
 //  // 答え見た
 //  final case class Box[A](value: A)
 //
@@ -335,10 +335,10 @@ object Chapter3 {
 
   // 3.5.6 Invariant functors and the imap method
   /**
-    * 不変ファンクターは、mapとcontramapを組み合わせたようなimap関数を実装してる
-    * つまり、imapは双方向の変換を行う
-    * 不変ファンクターのもっとも直感的な例は、エンコードとデコードである
-    */
+   * 不変ファンクターは、mapとcontramapを組み合わせたようなimap関数を実装してる
+   * つまり、imapは双方向の変換を行う
+   * 不変ファンクターのもっとも直感的な例は、エンコードとデコードである
+   */
 //  trait Codec[A] {
 //    def encode(value: A): String
 //    def decode(value: String): A
@@ -361,8 +361,8 @@ object Chapter3 {
 
   // 3.5.6.1 Transformative Thinking with imap
   /**
-    * 上記のCodecのimap関数を実装せよ
-    */
+   * 上記のCodecのimap関数を実装せよ
+   */
 //  // 答え見た
 //  trait Codec[A] { self =>
 //    def encode(value: A): String
@@ -377,8 +377,8 @@ object Chapter3 {
 //  }
 
   /**
-    * DoubleのCodecを作成して、imap関数が機能することを示せ
-    */
+   * DoubleのCodecを作成して、imap関数が機能することを示せ
+   */
 //  trait Codec[A] { self =>
 //    def encode(value: A): String
 //    def decode(value: String): A
@@ -410,9 +410,9 @@ object Chapter3 {
 //  }
 
   /**
-    * 以下のBox型のCodecを実装せよ
-    * final case class Box[A](value: A)
-    */
+   * 以下のBox型のCodecを実装せよ
+   * final case class Box[A](value: A)
+   */
 //  trait Codec[A] { self =>
 //    def encode(value: A): String
 //    def decode(value: String): A
@@ -443,9 +443,9 @@ object Chapter3 {
 
   // 3.6 Contravariant and Invariant in Cats
   /**
-    * CatsのContravariantファンクターとInvariantファンクターは、それぞれcats.Contravariantとcats.Invariantによって提供される
-    * これらのコードの簡易版は以下となる
-    */
+   * CatsのContravariantファンクターとInvariantファンクターは、それぞれcats.Contravariantとcats.Invariantによって提供される
+   * これらのコードの簡易版は以下となる
+   */
 //  trait Contravariant[F[_]] {
 //    def contramap[A, B](fa: F[A])(f: B => A): F[B]
 //  }
@@ -475,18 +475,18 @@ object Chapter3 {
 
   // 3.6.2 Invariant in Cats
   /**
-    * Catsは、MonoidのInvariantインスタンスを提供する
-    *
-    * 例として、Symbol型のMonoidを作成したいとする
-    * Catsは、SymbolのMonoidはないが、似た型のStringを提供する
-    * 以下のようにすれば、SymbolをMonoidで扱える
-    * 1. 2つのSymbolのパラメータを受け取る
-    * 2. 2つのSymbolをStringにコンバートする
-    * 3. Monoid[String]を使って、Stringを結合する
-    * 4. 結果をSymbolに変換して返す
-    *
-    * imapを使って、combineを実装できる
-    */
+   * Catsは、MonoidのInvariantインスタンスを提供する
+   *
+   * 例として、Symbol型のMonoidを作成したいとする
+   * Catsは、SymbolのMonoidはないが、似た型のStringを提供する
+   * 以下のようにすれば、SymbolをMonoidで扱える
+   * 1. 2つのSymbolのパラメータを受け取る
+   * 2. 2つのSymbolをStringにコンバートする
+   * 3. Monoid[String]を使って、Stringを結合する
+   * 4. 結果をSymbolに変換して返す
+   *
+   * imapを使って、combineを実装できる
+   */
 //  import cats.Monoid
 //  import cats.instances.string._
 //  import cats.syntax.invariant._
@@ -521,7 +521,7 @@ object Chapter3 {
 
   // 3.8 Summary
   /**
-  * コレクションのファンクターは、各要素が独立して変換するため、大規模なコレクションで変換を並列化・分散化できある
-  * Hadoopのようなmap-reduceフレームワークで活用される
-  */
+   * コレクションのファンクターは、各要素が独立して変換するため、大規模なコレクションで変換を並列化・分散化できある
+   * Hadoopのようなmap-reduceフレームワークで活用される
+   */
 }

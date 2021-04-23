@@ -1,23 +1,23 @@
-package chapter4
+package sandbox
 
 object Chapter4 {
   // 4 Monads
   /**
-    * 非公式だが、モナドはコンストラクターとflatMapを持つものである
-    */
+   * 非公式だが、モナドはコンストラクターとflatMapを持つものである
+   */
   // 4.1 What is a Monad?
   /**
-    * モナドは、計算を順序付けるためのメカニズムである
-    */
+   * モナドは、計算を順序付けるためのメカニズムである
+   */
 //  def parseInt(str: String): Option[Int] =
 //    scala.util.Try(str.toInt).toOption
 //  def divide(a: Int, b: Int): Option[Int] =
 //    if (b == 0) None else Some(a / b)
 
   /**
-    * 上記2つの関数は、Noneを返すことで失敗する可能性がある
-    * flatMap関数を使用すると、操作をシーケンスするときにこれを無視できる
-    */
+   * 上記2つの関数は、Noneを返すことで失敗する可能性がある
+   * flatMap関数を使用すると、操作をシーケンスするときにこれを無視できる
+   */
 //  def stringDivideBy(aStr: String, bStr: String): Option[Int] =
 //    parseInt(aStr).flatMap { aNum =>
 //      parseInt(bStr).flatMap { bNum =>
@@ -26,16 +26,16 @@ object Chapter4 {
 //    }
 
   /**
-    * 上記は、以下の動きをする
-    * 1. 最初のparseIntを呼び出すと、NoneまたはSomeが返される
-    * 2. Someを返す場合、flatMap関数は関数を呼び出し、aNumを渡す
-    * 3. 2番目のparseIntもNoneまたはSomeを返す
-    * 4. Someを返す場合、flatMap関数は関数を呼び出し、bNumを渡す
-    * 5. divide関数を呼び出すと、NoneまたはSomeが返され、これが結果となる
-    *
-    * 各関数の計算の結果はすべてOptionなので、再度flatMapを呼び出し、シーケンスが続行できる
-    * また、どこかでNoneになると、最終的な結果もNoneになる
-    */
+   * 上記は、以下の動きをする
+   * 1. 最初のparseIntを呼び出すと、NoneまたはSomeが返される
+   * 2. Someを返す場合、flatMap関数は関数を呼び出し、aNumを渡す
+   * 3. 2番目のparseIntもNoneまたはSomeを返す
+   * 4. Someを返す場合、flatMap関数は関数を呼び出し、bNumを渡す
+   * 5. divide関数を呼び出すと、NoneまたはSomeが返され、これが結果となる
+   *
+   * 各関数の計算の結果はすべてOptionなので、再度flatMapを呼び出し、シーケンスが続行できる
+   * また、どこかでNoneになると、最終的な結果もNoneになる
+   */
 //  def main(args: Array[String]): Unit = {
 //    println(stringDivideBy("6", "2")) // Some(3)
 //    println(stringDivideBy("6", "0")) // None
@@ -44,9 +44,9 @@ object Chapter4 {
 //  }
 
   /**
-    * すべてのモナドはファンクターである
-    * stringDivideByをfor内包表記で書くと以下になる
-    */
+   * すべてのモナドはファンクターである
+   * stringDivideByをfor内包表記で書くと以下になる
+   */
 //  def stringDivideBy(aStr: String, bStr: String): Option[Int] =
 //    for {
 //      aNum <- parseInt(aStr)
@@ -55,8 +55,8 @@ object Chapter4 {
 //    } yield ans
 
   /**
-    * Futureは、非同期計算をシーケンスするモナドである
-    */
+   * Futureは、非同期計算をシーケンスするモナドである
+   */
 //  import scala.concurrent.Future
 //  import scala.concurrent.ExecutionContext.Implicits.global
 //
@@ -70,38 +70,38 @@ object Chapter4 {
 //    } yield result1 + result2
 //  }
   /**
-    * 上記の計算の各ステップは、前のステップが終了した後でのみ開始できる
-    * Futureは並列実行できるが、それは別の話であり、モナドについてはすべてシーケンスに関するものである
-    */
+   * 上記の計算の各ステップは、前のステップが終了した後でのみ開始できる
+   * Futureは並列実行できるが、それは別の話であり、モナドについてはすべてシーケンスに関するものである
+   */
   // 4.1.1 Definition of a Monad
   /**
-    * モナドの動作は以下の2つの操作である
-    * pure: A => F[A]
-    * flatMap: (F[A], A => F[B]) => F[B]
-    *
-    * CatsのMonad型クラスの簡易版は以下である
-    */
+   * モナドの動作は以下の2つの操作である
+   * pure: A => F[A]
+   * flatMap: (F[A], A => F[B]) => F[B]
+   *
+   * CatsのMonad型クラスの簡易版は以下である
+   */
 //  trait Monad[F[_]] {
 //    def pure[A](value: A): F[A]
 //    def flatMap[A, B](value: F[A])(func: A => F[B]): F[B]
 //  }
 
   /**
-    * モナド則
-    *
-    * pureを呼び出し、funcを呼び出すことは、ただのfuncを呼び出すことと同じ（左単位元）
-    * pure(a).flatMap(func) == func(a)
-    *
-    * pureをflatMapに渡すことは、何もしないことと同じ（右単位元）
-    * m.flatMap(pure) == m
-    *
-    * fのflatMapとgのflatMapは、fとgのflatMapと同じ（結合性）
-    * m.flatMap(f).flatMap(g) == m.flatMap(x => f(x).flatMap(g))
-    */
+   * モナド則
+   *
+   * pureを呼び出し、funcを呼び出すことは、ただのfuncを呼び出すことと同じ（左単位元）
+   * pure(a).flatMap(func) == func(a)
+   *
+   * pureをflatMapに渡すことは、何もしないことと同じ（右単位元）
+   * m.flatMap(pure) == m
+   *
+   * fのflatMapとgのflatMapは、fとgのflatMapと同じ（結合性）
+   * m.flatMap(f).flatMap(g) == m.flatMap(x => f(x).flatMap(g))
+   */
   // 4.1.2 Exercise: Getting Func-y
   /**
-    * flatMapとpureを用いて、mapを定義せよ
-    */
+   * flatMapとpureを用いて、mapを定義せよ
+   */
 //  trait Monad[F[_]] {
 //    def pure[A](a: A): F[A]
 //
@@ -114,13 +114,13 @@ object Chapter4 {
 
   // 4.2 Monads in Cats
   /**
-    * Catsのモナドの型クラス、インスタンス、構文を見ていく
-    */
+   * Catsのモナドの型クラス、インスタンス、構文を見ていく
+   */
   // 4.2.1 The Monad Type Class
   /**
-    * cats.Monadは、flatMap関数を提供するFlatMap型とpure関数を提供するApplicative型を拡張している
-    * ApplicativeはFunctorを拡張しているので、すべてのMonadにmap関数が提供される
-    */
+   * cats.Monadは、flatMap関数を提供するFlatMap型とpure関数を提供するApplicative型を拡張している
+   * ApplicativeはFunctorを拡張しているので、すべてのMonadにmap関数が提供される
+   */
 //  import cats.Monad
 //  import cats.instances.option._
 //  import cats.instances.list._
@@ -143,8 +143,8 @@ object Chapter4 {
 
   // 4.2.2 Default Instances
   /**
-    * Catsは、cats.instances経由ですべてのモナドのインスタンスを提供する
-    */
+   * Catsは、cats.instances経由ですべてのモナドのインスタンスを提供する
+   */
 //  import cats.Monad
 //  import cats.instances.option._
 //  import cats.instances.list._
@@ -156,8 +156,8 @@ object Chapter4 {
 //    println(Monad[Vector].flatMap(Vector(1, 2, 3))(a => Vector(a, a * 10))) // Vector(1, 10, 2, 20, 3, 30)
 //  }
   /**
-    * Catsは、Futureモナドも提供する
-    */
+   * Catsは、Futureモナドも提供する
+   */
 //  import cats.Monad
 //  import cats.instances.future._
 //  import scala.concurrent._
@@ -175,14 +175,14 @@ object Chapter4 {
 
   // 4.2.3 Monad Syntax
   /**
-    * モナド構文は、以下の3つがある
-    * cats.syntax.flatMapは、flatMap構文を提供する
-    * cats.syntax.functorは、map構文を提供する
-    * cats.syntax.applicativeは、pure構文を提供する
-    * cats.implicitsを使えば、上記も含めてすべてのまとめてimportできる
-    *
-    * モナドのインスタンスを構築するためにpureを使用できる
-    */
+   * モナド構文は、以下の3つがある
+   * cats.syntax.flatMapは、flatMap構文を提供する
+   * cats.syntax.functorは、map構文を提供する
+   * cats.syntax.applicativeは、pure構文を提供する
+   * cats.implicitsを使えば、上記も含めてすべてのまとめてimportできる
+   *
+   * モナドのインスタンスを構築するためにpureを使用できる
+   */
 //  import cats.instances.option._
 //  import cats.instances.list._
 //  import cats.syntax.applicative._
@@ -193,8 +193,8 @@ object Chapter4 {
 //  }
 
   /**
-    * flatMapとmapは汎用関数を定義して確認する
-    */
+   * flatMapとmapは汎用関数を定義して確認する
+   */
 //  import cats.Monad
 //  import cats.syntax.functor._
 //  import cats.syntax.flatMap._
@@ -212,8 +212,8 @@ object Chapter4 {
 //  }
 
   /**
-    * flatMapとmapはfor内包表記で書き直せる
-    */
+   * flatMapとmapはfor内包表記で書き直せる
+   */
 //  import cats.Monad
 //  import cats.syntax.functor._
 //  import cats.syntax.flatMap._
@@ -252,10 +252,10 @@ object Chapter4 {
 //  }
 
   /**
-    * Idの定義は以下です
-    *
-    * type Id[A] = A
-    */
+   * Idの定義は以下です
+   *
+   * type Id[A] = A
+   */
 //  import cats.Id
 //
 //  "Dave": Id[String]
@@ -277,8 +277,8 @@ object Chapter4 {
 
   // 4.3.1 Exercise: Monadic Secret Identities
   /**
-    * Idのpure, map, flatMapを実装せよ
-    */
+   * Idのpure, map, flatMapを実装せよ
+   */
 //  // 答え見た
 //  import cats.Id
 //
@@ -297,8 +297,8 @@ object Chapter4 {
   // 4.4 Either
   // 4.4.1 Left and Right Bias
   /**
-    * Scala 2.11以前ではEitherは、mapとflatMapを持たないので、`.right`が必要だった
-    */
+   * Scala 2.11以前ではEitherは、mapとflatMapを持たないので、`.right`が必要だった
+   */
 //  val either1: Either[String, Int] = Right(10)
 //  val either2: Either[String, Int] = Right(32)
 //
@@ -308,8 +308,8 @@ object Chapter4 {
 //  } yield a + b // 42
 
   /**
-    * Scala 2.12からは、Eitherが再設計され、mapとflatMapを持つようになったので、`.right`が不要になった
-    */
+   * Scala 2.12からは、Eitherが再設計され、mapとflatMapを持つようになったので、`.right`が不要になった
+   */
 //  val either1: Either[String, Int] = Right(10)
 //  val either2: Either[String, Int] = Right(32)
 //
@@ -319,9 +319,9 @@ object Chapter4 {
 //  } yield a + b // Right(42)
 
   /**
-    * Scala 2.11以前では、`cats.syntax.either._`をimportすることでmapとflatMapを使えるようになる
-    * Scala 2.12以降はこのパッケージは省略可能
-    */
+   * Scala 2.11以前では、`cats.syntax.either._`をimportすることでmapとflatMapを使えるようになる
+   * Scala 2.12以降はこのパッケージは省略可能
+   */
   // 4.4.2 Creating Instances
 //  import cats.syntax.either._
 //
@@ -339,8 +339,8 @@ object Chapter4 {
 //  }
 
   /**
-    * Left.applyはLeftをRight.applyはRightを返すが、上記のasRightはEither型を返すので便利なときがある
-    */
+   * Left.applyはLeftをRight.applyはRightを返すが、上記のasRightはEither型を返すので便利なときがある
+   */
   // Right.applyを使った例
 //  def countPositive(nums: List[Int]) =
 //    nums.foldLeft(Right(0)) { (accumulator, num) =>
@@ -376,8 +376,8 @@ object Chapter4 {
 //  }
 
   /**
-    * catchOnly関数とcatchNonFatal関数は例外をキャッチするのに最適である
-    */
+   * catchOnly関数とcatchNonFatal関数は例外をキャッチするのに最適である
+   */
 //  import cats.syntax.either._
 //
 //  def main(args: Array[String]): Unit = {
@@ -423,8 +423,8 @@ object Chapter4 {
 
   // 4.4.4 Error Handling
   /**
-    * EitherのflatMapで計算をシーケンスすると、1つでも計算に失敗したら、以降の計算は行われない
-    */
+   * EitherのflatMapで計算をシーケンスすると、1つでも計算に失敗したら、以降の計算は行われない
+   */
 //  import cats.syntax.either._
 //
 //  def main(args: Array[String]): Unit = {
@@ -440,15 +440,15 @@ object Chapter4 {
 //  }
 
   /**
-    * エラー処理でEitherを使用する場合、エラーの型を決める必要がある
-    */
+   * エラー処理でEitherを使用する場合、エラーの型を決める必要がある
+   */
 //  type Result[A] = Either[Throwable, A]
 
   /**
-    * ただし、Throwableは広すぎて具体的にどのようなエラーが起きたのか分からない
-    *
-    * 別のアプローチとして、プログラムで発生する可能性のあるエラーを定義する
-    */
+   * ただし、Throwableは広すぎて具体的にどのようなエラーが起きたのか分からない
+   *
+   * 別のアプローチとして、プログラムで発生する可能性のあるエラーを定義する
+   */
 //  sealed trait LoginError extends Product with Serializable
 //
 //  final case class UserNotFound(username: String) extends LoginError
@@ -480,9 +480,9 @@ object Chapter4 {
 
   // 4.4.5 Exercise: What is Best?
   /**
-    * 前述のエラー処理戦略は、すべての目的に適しているか？
-    * エラー処理に他にどのような機能が必要か？
-    */
+   * 前述のエラー処理戦略は、すべての目的に適しているか？
+   * エラー処理に他にどのような機能が必要か？
+   */
   // 答え見た
   // エラーのリカバリ処理が必要
   // エラーの通知
@@ -491,15 +491,15 @@ object Chapter4 {
 
   // 4.5 Aside: Error Handling and MonadError
   /**
-    * CatsはEitherのようなMonadErrorというエラー処理に使えるデータ型を提供する
-    */
+   * CatsはEitherのようなMonadErrorというエラー処理に使えるデータ型を提供する
+   */
   // 4.5.1 The MonadError Type Class
   /**
-    * MonadErrorの定義の簡易版を以下に示す
-    *
-    *  Fは、モナドの型
-    *  Eは、Fに含まれるエラーの型
-    */
+   * MonadErrorの定義の簡易版を以下に示す
+   *
+   *  Fは、モナドの型
+   *  Eは、Fに含まれるエラーの型
+   */
 //  import cats.Monad
 //
 //  trait MonadError[F[_], E] extends Monad[F] {
@@ -510,8 +510,8 @@ object Chapter4 {
 //  }
 
   /**
-    * Eitherの型クラスをインスタンス化する例を以下に示す
-    */
+   * Eitherの型クラスをインスタンス化する例を以下に示す
+   */
 //  import cats.MonadError
 //  import cats.instances.either._
 //
@@ -520,8 +520,8 @@ object Chapter4 {
 
   // 4.5.2 Raising and Handling Errors
   /**
-    * MonadErrorの重要な関数はraiseErrorとhandleErrorWithである
-    */
+   * MonadErrorの重要な関数はraiseErrorとhandleErrorWithである
+   */
 //  import cats.MonadError
 //  import cats.instances.either._
 //
@@ -546,9 +546,9 @@ object Chapter4 {
 //  }
 
   /**
-    * Catsは、cats.syntax.applicativeError経由でraiseErrorとhandleErrorWithを提供する
-    * また、cats.syntax.monadError経由でensureを提供する
-    */
+   * Catsは、cats.syntax.applicativeError経由でraiseErrorとhandleErrorWithを提供する
+   * また、cats.syntax.monadError経由でensureを提供する
+   */
 //  import cats.syntax.applicative._
 //  import cats.syntax.applicativeError._
 //  import cats.syntax.monadError._
@@ -573,9 +573,9 @@ object Chapter4 {
 
   // 4.5.3 Instances of MonadError
   /**
-    * Catsは、Either、Future、Tryなど多数のデータ型に対してMonadErrorインスタンスを提供する
-    * Eitherは任意のエラー型にカスタマイズ可能だが、FutureとTryは常にエラーをThrowablesとして表す
-    */
+   * Catsは、Either、Future、Tryなど多数のデータ型に対してMonadErrorインスタンスを提供する
+   * Eitherは任意のエラー型にカスタマイズ可能だが、FutureとTryは常にエラーをThrowablesとして表す
+   */
 //  import cats.syntax.applicativeError._
 //  import scala.util.Try
 //  import cats.instances.try_._
@@ -585,12 +585,12 @@ object Chapter4 {
 
   // 4.5.4 Exercise: Abstracting
   /**
-    * 以下のシグネチャーを持つvalidateAdultを実装せよ
-    *
-    * def validateAdult[F[_]](age: Int)(implicit me: MonadError[F, Throwable]): F[Int]
-    *
-    * 18歳以上だと成功、それ以外の場合はIllegalArgumentExceptionを返す
-    */
+   * 以下のシグネチャーを持つvalidateAdultを実装せよ
+   *
+   * def validateAdult[F[_]](age: Int)(implicit me: MonadError[F, Throwable]): F[Int]
+   *
+   * 18歳以上だと成功、それ以外の場合はIllegalArgumentExceptionを返す
+   */
 //  // 答え見た
 //  import cats.MonadError
 //  import cats.syntax.applicative._
@@ -618,15 +618,15 @@ object Chapter4 {
 
   // 4.6 The Eval Monad
   /**
-    * cats.Evalは、様々な評価モデルを抽象化できるモナドである
-    * Evalは結果をメモ化（キャッシュ化）することもできる
-    * Evalはスタックセーフである
-    */
+   * cats.Evalは、様々な評価モデルを抽象化できるモナドである
+   * Evalは結果をメモ化（キャッシュ化）することもできる
+   * Evalはスタックセーフである
+   */
   // 4.6.1 Eager, Lazy, Memoized, Oh My!
   /**
-    * Scalaのvalの評価モデルを見る
-    * 副作用のある計算を使用して評価モデルを見る
-    */
+   * Scalaのvalの評価モデルを見る
+   * 副作用のある計算を使用して評価モデルを見る
+   */
 //  def main(args: Array[String]): Unit = {
 //    val x = {
 //      println("Computing X")
@@ -642,8 +642,8 @@ object Chapter4 {
 //  }
 
   /**
-    * 次にdefの例を見てみる
-    */
+   * 次にdefの例を見てみる
+   */
 //  def main(args: Array[String]): Unit = {
 //    def y = {
 //      println("Computing Y")
@@ -660,8 +660,8 @@ object Chapter4 {
 //  }
 
   /**
-    * 次にlazy valの例を見てみる
-    */
+   * 次にlazy valの例を見てみる
+   */
 //  def main(args: Array[String]): Unit = {
 //    lazy val z = {
 //      println("Computing Z")
@@ -677,8 +677,8 @@ object Chapter4 {
 
   // 4.6.2 Eval’s Models of Evaluation
   /**
-    * Evalは、Now、Always、Laterの3つのサブタイプがある
-    */
+   * Evalは、Now、Always、Laterの3つのサブタイプがある
+   */
 //  import cats.Eval
 //
 //  def main(args: Array[String]): Unit = {
@@ -696,14 +696,14 @@ object Chapter4 {
 //  }
 
   /**
-    * Eval.nowは、valと同様（定義した時に評価され、メモ化される）
-    * Eval.alwaysは、defと同様（実行時に評価され、メモ化されない）
-    * Eval.laterは、lazy valと同様（実行時に評価され、メモ化される）
-    */
+   * Eval.nowは、valと同様（定義した時に評価され、メモ化される）
+   * Eval.alwaysは、defと同様（実行時に評価され、メモ化されない）
+   * Eval.laterは、lazy valと同様（実行時に評価され、メモ化される）
+   */
   // 4.6.3 Eval as a Monad
   /**
-    * 他のすべてのモナドと同様に、Evalのmap関数とflatMap関数はチェーンに計算を追加する
-    */
+   * 他のすべてのモナドと同様に、Evalのmap関数とflatMap関数はチェーンに計算を追加する
+   */
 //  import cats.Eval
 //
 //  def main(args: Array[String]): Unit = {
@@ -721,8 +721,7 @@ object Chapter4 {
 //  }
 
   /**
-    *
-    */
+   */
 //  import cats.Eval
 //
 //  def main(args: Array[String]): Unit = {
@@ -748,9 +747,9 @@ object Chapter4 {
 //  }
 
   /**
-    * Evalはmemoize関数を持つ
-    * memoize関数を呼び出すと、それまでの計算結果をキャッシュする
-    */
+   * Evalはmemoize関数を持つ
+   * memoize関数を呼び出すと、それまでの計算結果をキャッシュする
+   */
 //  import cats.Eval
 //
 //  def main(args: Array[String]): Unit = {
@@ -778,16 +777,16 @@ object Chapter4 {
 
   // 4.6.4 Trampolining and Eval.defer
   /**
-    * Evalはmap関数とflatMap関数がトランポリンされる
-    * これは、スタックフレームを消費することなく、map関数とflatMap関数の呼び出しを任意にネストできる
-    * これを「スタックの安全性」と呼ぶ
-    */
+   * Evalはmap関数とflatMap関数がトランポリンされる
+   * これは、スタックフレームを消費することなく、map関数とflatMap関数の呼び出しを任意にネストできる
+   * これを「スタックの安全性」と呼ぶ
+   */
 //  def factorial(n: BigInt): BigInt = if (n == 1) n else n * factorial(n - 1)
 //  factorial(50000) // StackOverflowError
 
   /**
-    * factorial関数をスタックセーフに実装し直す
-    */
+   * factorial関数をスタックセーフに実装し直す
+   */
 //  import cats.Eval
 //
 //  def factorial(n: BigInt): Eval[BigInt] =
@@ -797,11 +796,11 @@ object Chapter4 {
 //  factorial(50000).value // StackOverflowError
 
   /**
-    * 上記だとまだStackOverflowErrorになってしまう
-    * これは、map関数を呼び出す前にfactorialの再帰呼び出しを行っているからである
-    *
-    * Eval.deferを使って書き直す
-    */
+   * 上記だとまだStackOverflowErrorになってしまう
+   * これは、map関数を呼び出す前にfactorialの再帰呼び出しを行っているからである
+   *
+   * Eval.deferを使って書き直す
+   */
 //  import cats.Eval
 //
 //  def factorial(n: BigInt): Eval[BigInt] =
@@ -811,13 +810,13 @@ object Chapter4 {
 //  factorial(50000).value // StackOverflowErrorにならない
 
   /**
-    * Eval.deferはヒープ上にオブジェクトのチェーンを作成することで、スタックの消費を回避する
-    * よって、無制限に使えるわけではなく、スタックの代わりにヒープのサイズによって制限される
-    */
+   * Eval.deferはヒープ上にオブジェクトのチェーンを作成することで、スタックの消費を回避する
+   * よって、無制限に使えるわけではなく、スタックの代わりにヒープのサイズによって制限される
+   */
   // 4.6.5 Exercise: Safer Folding using Eval
   /**
-    * foldRightをEvalを使ってスタックセーフに実装せよ
-    */
+   * foldRightをEvalを使ってスタックセーフに実装せよ
+   */
   // 答え見た
 //  import cats.Eval
 //
@@ -837,8 +836,8 @@ object Chapter4 {
 
   // 4.7 The Writer Monad
   /**
-    * cats.data.Writerを使用して、評価に関するメッセージ、エラー、追加データなどを記録し、最終結果とログを抽出できる
-    */
+   * cats.data.Writerを使用して、評価に関するメッセージ、エラー、追加データなどを記録し、最終結果とログを抽出できる
+   */
   // 4.7.1 Creating and Unpacking Writers
 //  import cats.data.Writer
 //
@@ -850,20 +849,20 @@ object Chapter4 {
 //  }
 
   /**
-    * 上記の実行結果を見ると、WriterではなくWriterTという型になっている
-    * WriterはWriterTの型エイリアスであるため、以下のように書ける
-    */
+   * 上記の実行結果を見ると、WriterではなくWriterTという型になっている
+   * WriterはWriterTの型エイリアスであるため、以下のように書ける
+   */
 //  import cats.data.WriterT
 //  import cats.Id
 //
 //  type Writer[W, A] = WriterT[Id, W, A]
 
   /**
-    * Catsは、ログまたは結果のみを指定するWriterを作成する手段を提供する
-    * もし、結果のみがほしい場合は、pure構文を使用できる
-    * これを使うには、スコープ内にMonoid[W]が必要になる
-    * Monoid[W]により、空のログを生成する手段を得られる
-    */
+   * Catsは、ログまたは結果のみを指定するWriterを作成する手段を提供する
+   * もし、結果のみがほしい場合は、pure構文を使用できる
+   * これを使うには、スコープ内にMonoid[W]が必要になる
+   * Monoid[W]により、空のログを生成する手段を得られる
+   */
 //  import cats.data.Writer
 //  import cats.instances.vector._
 //  import cats.syntax.applicative._
@@ -875,8 +874,8 @@ object Chapter4 {
 //  }
 
   /**
-    * また、結果は不要で、ログのみがほしい場合は、tell構文を使用してWriter[Unit]を作成できる
-    */
+   * また、結果は不要で、ログのみがほしい場合は、tell構文を使用してWriter[Unit]を作成できる
+   */
 //  import cats.syntax.writer._
 //
 //  def main(args: Array[String]): Unit = {
@@ -884,8 +883,8 @@ object Chapter4 {
 //  }
 
   /**
-    * 結果とログの両方がほしい場合、Writer.applyもしくは、writer構文を使用できる
-    */
+   * 結果とログの両方がほしい場合、Writer.applyもしくは、writer構文を使用できる
+   */
 //  import cats.data.Writer
 //  import cats.syntax.writer._
 //
@@ -898,9 +897,9 @@ object Chapter4 {
 //  }
 
   /**
-    * value関数とwritten関数を使用して、Writerから結果とログを抽出できる
-    * また、run関数を使って、結果とログの両方を抽出できる
-    */
+   * value関数とwritten関数を使用して、Writerから結果とログを抽出できる
+   * また、run関数を使って、結果とログの両方を抽出できる
+   */
 //  import cats.data.Writer
 //  import cats.syntax.writer._
 //
@@ -915,8 +914,8 @@ object Chapter4 {
 
   // 4.7.2 Composing and Transforming Writers
   /**
-    * Writerのログは、mapまたはflatMapするときに保存される
-    */
+   * Writerのログは、mapまたはflatMapするときに保存される
+   */
 //  import cats.data.Writer
 //  import cats.instances.vector._
 //  import cats.syntax.applicative._
@@ -962,8 +961,8 @@ object Chapter4 {
 
   // 4.7.3 Exercise: Show Your Working
   /**
-    * 階乗の計算を並列実行しても、それぞれ個別にログに保存できるようにせよ
-    */
+   * 階乗の計算を並列実行しても、それぞれ個別にログに保存できるようにせよ
+   */
 //  def slowly[A](body: => A) =
 //    try body
 //    finally Thread.sleep(100)
@@ -1045,12 +1044,12 @@ object Chapter4 {
 
   // 4.8 The Reader Monad
   /**
-    * Readerの一般的な用途の1つは、依存性注入
-    */
+   * Readerの一般的な用途の1つは、依存性注入
+   */
   // 4.8.1 Creating and Unpacking Readers
   /**
-    * Reader.applyコンストラクターを使って、関数A => BからReader[A, B]を作成できる
-    */
+   * Reader.applyコンストラクターを使って、関数A => BからReader[A, B]を作成できる
+   */
 //  import cats.data.Reader
 //
 //  final case class Cat(name: String, favoriteFood: String)
@@ -1063,8 +1062,8 @@ object Chapter4 {
 
   // 4.8.2 Composing Readers
   /**
-    * map関数は、Readerの計算を拡張する
-    */
+   * map関数は、Readerの計算を拡張する
+   */
 //  import cats.data.Reader
 //
 //  final case class Cat(name: String, favoriteFood: String)
@@ -1077,8 +1076,8 @@ object Chapter4 {
 //  }
 
   /**
-    * flatMap関数は、同じ型に依存するReaderを組み合わせることができる
-    */
+   * flatMap関数は、同じ型に依存するReaderを組み合わせることができる
+   */
 //  import cats.data.Reader
 //
 //  final case class Cat(name: String, favoriteFood: String)
@@ -1104,8 +1103,8 @@ object Chapter4 {
 
   // 4.8.3 Exercise: Hacking on Readers
   /**
-    * 簡単なログインシステムを構築する
-    */
+   * 簡単なログインシステムを構築する
+   */
 //  final case class Db(
 //      usernames: Map[Int, String],
 //      passwords: Map[String, String]
@@ -1148,21 +1147,21 @@ object Chapter4 {
 
   // 4.8.4 When to Use Readers?
   /**
-    * ReaderはDIを行うためのツールを提供する
-    * 各ステップがReaderインスタンスを返し、mapおよびflatMapでチェーンして、依存関係を入力として受け入れる関数を作成する
-    *
-    * Readerは次の状況で最も役に立つ
-    * ・関数で簡単に表現できるプログラムを構築している
-    * ・パラメーターの注入を先延ばしにしたい（定義だけしておいて、後でパラメーターを設定する）
-    * ・ステップごとにテストしたい
-    */
+   * ReaderはDIを行うためのツールを提供する
+   * 各ステップがReaderインスタンスを返し、mapおよびflatMapでチェーンして、依存関係を入力として受け入れる関数を作成する
+   *
+   * Readerは次の状況で最も役に立つ
+   * ・関数で簡単に表現できるプログラムを構築している
+   * ・パラメーターの注入を先延ばしにしたい（定義だけしておいて、後でパラメーターを設定する）
+   * ・ステップごとにテストしたい
+   */
 
   // 4.9 The State Monad
   // 4.9.1 Creating and Unpacking State
   /**
-    * State[S, A]のインスタンスは`S => (S, A)`型を表す
-    * Sは状態の型であり、Aは結果の型である
-    */
+   * State[S, A]のインスタンスは`S => (S, A)`型を表す
+   * Sは状態の型であり、Aは結果の型である
+   */
 //  import cats.data.State
 //
 //  val a = State[Int, String] { state =>
@@ -1170,12 +1169,12 @@ object Chapter4 {
 //  }
 
   /**
-    * Stateのインスタンスは次の2つのことを行う関数である
-    * ・入力状態を出力状態に変換する
-    * ・結果を算出する
-    *
-    * 初期状態を与えるとrunできる
-    */
+   * Stateのインスタンスは次の2つのことを行う関数である
+   * ・入力状態を出力状態に変換する
+   * ・結果を算出する
+   *
+   * 初期状態を与えるとrunできる
+   */
 //  import cats.data.State
 //
 //  def main(args: Array[String]): Unit = {
@@ -1195,8 +1194,8 @@ object Chapter4 {
 
   // 4.9.2 Composing and Transforming State
   /**
-    * Stateのmap関数とflatMap関数は、あるインスタンスから別のインスタンスに状態をスレッド化する
-    */
+   * Stateのmap関数とflatMap関数は、あるインスタンスから別のインスタンスに状態をスレッド化する
+   */
 //  import cats.data.State
 //
 //  def main(args: Array[String]): Unit = {
@@ -1221,8 +1220,8 @@ object Chapter4 {
 //  }
 
   /**
-    * Catsは、基本的なステップを作成するため、いくつかの便利なコンストラクターを提供する
-    */
+   * Catsは、基本的なステップを作成するため、いくつかの便利なコンストラクターを提供する
+   */
 //  import cats.data.State
 //
 //  def main(args: Array[String]): Unit = {
@@ -1262,25 +1261,25 @@ object Chapter4 {
 
   // 4.9.3 Exercise: Post-Order Calculator
   /**
-    * Post-Orderの計算機を実装する
-    * Post-Order式とは以下のようにオペランドの後に演算子を記述する数学表記である
-    * 1 2 +
-    *
-    * 数字の場合、それをスタックにプッシュする
-    * 演算子の場合、スタックから2つのオペランドをポップして計算し、結果をスタックにプッシュする
-    *
-    * たとえば、(1 + 2) * 3)は括弧を使用せず、次のように評価できる
-    * 1 2 + 3 *
-    * 2 + 3 *
-    * + 3 *
-    * 3 3 *
-    * 3 *
-    * *
-    * この時スタックには9が入っている
-    */
+   * Post-Orderの計算機を実装する
+   * Post-Order式とは以下のようにオペランドの後に演算子を記述する数学表記である
+   * 1 2 +
+   *
+   * 数字の場合、それをスタックにプッシュする
+   * 演算子の場合、スタックから2つのオペランドをポップして計算し、結果をスタックにプッシュする
+   *
+   * たとえば、(1 + 2) * 3)は括弧を使用せず、次のように評価できる
+   * 1 2 + 3 *
+   * 2 + 3 *
+   * + 3 *
+   * 3 3 *
+   * 3 *
+   * *
+   * この時スタックには9が入っている
+   */
   /**
-    * スタック上の変換と中間結果をStateインスタンスで表せる
-    */
+   * スタック上の変換と中間結果をStateインスタンスで表せる
+   */
 //  // 答え見た
 //  import cats.data.State
 //
@@ -1333,9 +1332,9 @@ object Chapter4 {
 
   // 4.10 Defining Custom Monads
   /**
-    * flatMap、pure、tailRecMの3つの関数の実装を提供することでカスタム型のモナドを定義できる
-    * Monad[Option]の例を以下に示す
-    */
+   * flatMap、pure、tailRecMの3つの関数の実装を提供することでカスタム型のモナドを定義できる
+   * Monad[Option]の例を以下に示す
+   */
 //  import cats.Monad
 //  import scala.annotation.tailrec
 //
@@ -1356,9 +1355,9 @@ object Chapter4 {
 //  }
 
   /**
-    * 例として、flatMapでretry関数を定義する
-    * retryは停止する必要があることを示すまで関数を呼び続ける
-    */
+   * 例として、flatMapでretry関数を定義する
+   * retryは停止する必要があることを示すまで関数を呼び続ける
+   */
 //  import cats.Monad
 //  import cats.syntax.flatMap._
 //  import cats.instances.option._
@@ -1375,8 +1374,8 @@ object Chapter4 {
 //  }
 
   /**
-    * tailRecMを使って、retryを書き直す
-    */
+   * tailRecMを使って、retryを書き直す
+   */
 //  import cats.Monad
 //  import cats.syntax.functor._
 //  import cats.instances.option._
@@ -1392,8 +1391,8 @@ object Chapter4 {
 //  }
 
   /**
-    * iterateWhileMを使って、retryを書き直す
-    */
+   * iterateWhileMを使って、retryを書き直す
+   */
 //  import cats.Monad
 //  import cats.syntax.monad._
 //  import cats.instances.option._
@@ -1408,8 +1407,8 @@ object Chapter4 {
 
   // 4.10.1 Exercise: Branching out Further with Monads
   /**
-    * Treeデータ型のモナドを書け
-    */
+   * Treeデータ型のモナドを書け
+   */
 //  sealed trait Tree[+A]
 //
 //  final case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]

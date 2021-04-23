@@ -1,4 +1,4 @@
-package chapter1
+package sandbox
 
 object Chapter1 {
   // 1.1 Anatomy of a Type Class
@@ -34,7 +34,8 @@ object Chapter1 {
             Map(
               "name" -> JsString(value.name),
               "email" -> JsString(value.email)
-            ))
+            )
+          )
       }
   }
 

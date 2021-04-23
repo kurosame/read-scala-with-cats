@@ -1,14 +1,14 @@
-package chapter5
+package sandbox
 
 object Chapter5 {
   // 5 Monad Transformers
   /**
-    * DBからユーザー情報を検索したいとする
-    * ユーザーは存在しない可能性があるので、Option[User]を返す
-    * また、DBは通信障害などで失敗する可能性があるので、最終結果はEither[Error, Option[User]]を返す
-    *
-    * ユーザー情報を利用するには、以下のようにflatMapをネストする必要があり、面倒である
-    */
+   * DBからユーザー情報を検索したいとする
+   * ユーザーは存在しない可能性があるので、Option[User]を返す
+   * また、DBは通信障害などで失敗する可能性があるので、最終結果はEither[Error, Option[User]]を返す
+   *
+   * ユーザー情報を利用するには、以下のようにflatMapをネストする必要があり、面倒である
+   */
 //  def lookupUserName(id: Long): Either[Error, Option[String]] =
 //    for {
 //      optUser <- lookupUser(id)
@@ -20,8 +20,8 @@ object Chapter5 {
 
   // 5.1 Exercise: Composing Monads
   /**
-    * 2つの任意のモナドを組み合わせて1つのモナドを作成できるか
-    */
+   * 2つの任意のモナドを組み合わせて1つのモナドを作成できるか
+   */
 //  import cats.Monad
 //  import cats.syntax.applicative._
 //
@@ -35,9 +35,9 @@ object Chapter5 {
 //  }
 
   /**
-    * 上記のM1とM2は何か不明なので、flatMapの定義を書くことは不可能である
-    * ただし、M2が分かっている場合、たとえばM2がOptionだとすると、flatMapを定義できるようになる
-    */
+   * 上記のM1とM2は何か不明なので、flatMapの定義を書くことは不可能である
+   * ただし、M2が分かっている場合、たとえばM2がOptionだとすると、flatMapを定義できるようになる
+   */
 //  import cats.Monad
 //  import cats.syntax.applicative._
 //
@@ -52,25 +52,25 @@ object Chapter5 {
 //  }
 
   /**
-    * 上記のflatMapの定義のNoneはOption固有の概念である
-    * Optionを他のモナドと組み合わせるためには、このように追加の詳細が必要
-    * これがモナド変換子の考え方になる
-    * Catsでは様々なモナド変換子が定義されており、他のモナドでそのモナドを構成するために必要な追加の詳細を提供する
-    */
+   * 上記のflatMapの定義のNoneはOption固有の概念である
+   * Optionを他のモナドと組み合わせるためには、このように追加の詳細が必要
+   * これがモナド変換子の考え方になる
+   * Catsでは様々なモナド変換子が定義されており、他のモナドでそのモナドを構成するために必要な追加の詳細を提供する
+   */
   // 5.2 A Transformative Example
   /**
-    * CatsはEitherTやOptionTなどTサフィックスが付いたモナド変換子を提供する
-    * 以下は、OptionTを利用して、ListとOptionを構成する例である
-    */
+   * CatsはEitherTやOptionTなどTサフィックスが付いたモナド変換子を提供する
+   * 以下は、OptionTを利用して、ListとOptionを構成する例である
+   */
 //  import cats.data.OptionT
 //
 //  type ListOption[A] = OptionT[List, A]
 
   /**
-    * 上記は、OptionT[List, A]を利用して、List[Option[A]]に変換できる
-    *
-    * 以下はListOptionのインスタンスを作成している
-    */
+   * 上記は、OptionT[List, A]を利用して、List[Option[A]]に変換できる
+   *
+   * 以下はListOptionのインスタンスを作成している
+   */
 //  import cats.data.OptionT
 //  import cats.instances.list._
 //  import cats.syntax.applicative._
@@ -94,35 +94,35 @@ object Chapter5 {
 
   // 5.3 Monad Transformers in Cats
   /**
-    * モナド変換子を理解するために必要な概念は以下である
-    * ・利用可能な変換子クラス
-    * ・変換子を使用してモナドのスタックを構築する方法
-    * ・モナドスタックのインスタンスを構築する方法
-    * ・ラップされたモナドにアクセスするためにスタックを引き離す方法
-    */
+   * モナド変換子を理解するために必要な概念は以下である
+   * ・利用可能な変換子クラス
+   * ・変換子を使用してモナドのスタックを構築する方法
+   * ・モナドスタックのインスタンスを構築する方法
+   * ・ラップされたモナドにアクセスするためにスタックを引き離す方法
+   */
   // 5.3.1 The Monad Transformer Classes
   /**
-    * Catsで利用可能な変換子クラスのインスタンスは以下である
-    * ・cats.data.OptionT
-    * ・cats.data.EitherT
-    * ・cats.data.ReaderT
-    * ・cats.data.WriterT
-    * ・cats.data.StateT
-    * ・cats.data.IdT
-    *
-    * また、cats.data.KleisliとReaderTは同じもので、実際にはReaderTはKleisliの型エイリアスである
-    */
+   * Catsで利用可能な変換子クラスのインスタンスは以下である
+   * ・cats.data.OptionT
+   * ・cats.data.EitherT
+   * ・cats.data.ReaderT
+   * ・cats.data.WriterT
+   * ・cats.data.StateT
+   * ・cats.data.IdT
+   *
+   * また、cats.data.KleisliとReaderTは同じもので、実際にはReaderTはKleisliの型エイリアスである
+   */
   // 5.3.2 Building Monad Stacks
   /**
-    * それぞれのモナド変換子はすべて同じ規則に従う
-    *
-    * type ListOption[A] = OptionT[List, A]
-    * 上記はList[Option[A]]と同義だが、モナド変換子のモナド（Option）は内側、Listは外側のモナドとなっている
-    *
-    * type ErrorOr[A] = Either[String, A]
-    * type ErrorOrOption[A] = OptionT[ErrorOr, A]
-    * Either型でOptionTを使う場合、Eitherは2つの型パラメーターが必要になる
-    */
+   * それぞれのモナド変換子はすべて同じ規則に従う
+   *
+   * type ListOption[A] = OptionT[List, A]
+   * 上記はList[Option[A]]と同義だが、モナド変換子のモナド（Option）は内側、Listは外側のモナドとなっている
+   *
+   * type ErrorOr[A] = Either[String, A]
+   * type ErrorOrOption[A] = OptionT[ErrorOr, A]
+   * Either型でOptionTを使う場合、Eitherは2つの型パラメーターが必要になる
+   */
 //  import cats.syntax.applicative._
 //  import cats.data.OptionT
 //  import cats.instances.either._
@@ -141,8 +141,8 @@ object Chapter5 {
 //  }
 
   /**
-    * FutureとEitherとOptionの3つのモナドを組み合わせる
-    */
+   * FutureとEitherとOptionの3つのモナドを組み合わせる
+   */
 //  import cats.syntax.applicative._
 //  import scala.concurrent.Future
 //  import cats.data.{EitherT, OptionT}
@@ -164,8 +164,8 @@ object Chapter5 {
 
   // 5.3.3 Constructing and Unpacking Instances
   /**
-    * モナド変換子はvalue関数で解凍できる
-    */
+   * モナド変換子はvalue関数で解凍できる
+   */
 //  import cats.syntax.applicative._
 //  import cats.instances.either._
 //  import cats.data.{OptionT, EitherT}
@@ -207,18 +207,18 @@ object Chapter5 {
 
   // 5.3.4 Default Instances
   /**
-    * Catsの多くのモナドは対応する変換子とIdモナドを使用して定義される
-    *
-    * type Reader[E, A] = ReaderT[Id, E, A] // = Kleisli[Id, E, A]
-    * type Writer[W, A] = WriterT[Id, W, A]
-    * type State[S, A] = StateT[Id, S, A]
-    */
+   * Catsの多くのモナドは対応する変換子とIdモナドを使用して定義される
+   *
+   * type Reader[E, A] = ReaderT[Id, E, A] // = Kleisli[Id, E, A]
+   * type Writer[W, A] = WriterT[Id, W, A]
+   * type State[S, A] = StateT[Id, S, A]
+   */
   // 5.3.5 Usage Patterns
   /**
-    * モナド変換子は汎用的に使うのが難しい場合がある
-    * 様々なコンテキストでモナドを操作するため、アンパックとリパックを行う必要が生じる可能性がある
-    * ローカルでモナド変換子を定義することで使用するモナド変換子を開発者が選択することができる
-    */
+   * モナド変換子は汎用的に使うのが難しい場合がある
+   * 様々なコンテキストでモナドを操作するため、アンパックとリパックを行う必要が生じる可能性がある
+   * ローカルでモナド変換子を定義することで使用するモナド変換子を開発者が選択することができる
+   */
 //  import cats.data.Writer
 //  import cats.instances.list._
 //
@@ -259,6 +259,6 @@ object Chapter5 {
 
   // 5.5 Summary
   /**
-  * モナド変換子を使うことで、ネストされた（モナドである）型を扱うときにflatMapのネストを書く必要がなくなる
-  */
+   * モナド変換子を使うことで、ネストされた（モナドである）型を扱うときにflatMapのネストを書く必要がなくなる
+   */
 }
