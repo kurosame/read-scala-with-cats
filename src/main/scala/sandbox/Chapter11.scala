@@ -147,26 +147,26 @@ object Chapter11 {
    * 実装を完了してください！
    */
   // 答え見た
-  final case class GCounter(counters: Map[String, Int]) {
-    def increment(machine: String, amount: Int) = {
-      // 自分のマシンのカウンターを取得（無ければ0）し、リクエスト数（amount）を加算
-      val value = amount + counters.getOrElse(machine, 0)
-      GCounter(counters + (machine -> value))
-    }
-
-    // 別のマシン（that）のGCounterを引数に受け取る
-    def merge(that: GCounter): GCounter = {
-      // 別のマシン（that）と自分のマシン（this）を結合
-      // that.countersを++で結合しているのは、thatがCを持っているパターンを考慮するため
-      GCounter(that.counters ++ this.counters.map { case (k, v) =>
-        // 各マシンのvalueの最大値を取得し、valueを更新する
-        k -> (v.max(that.counters.getOrElse(k, 0)))
-      })
-    }
-
-    // 各マシンのvalueを合計
-    def total: Int = counters.values.sum
-  }
+//  final case class GCounter(counters: Map[String, Int]) {
+//    def increment(machine: String, amount: Int) = {
+//      // 自分のマシンのカウンターを取得（無ければ0）し、リクエスト数（amount）を加算
+//      val value = amount + counters.getOrElse(machine, 0)
+//      GCounter(counters + (machine -> value))
+//    }
+//
+//    // 別のマシン（that）のGCounterを引数に受け取る
+//    def merge(that: GCounter): GCounter = {
+//      // 別のマシン（that）と自分のマシン（this）を結合
+//      // that.countersを++で結合しているのは、thatがCを持っているパターンを考慮するため
+//      GCounter(that.counters ++ this.counters.map { case (k, v) =>
+//        // 各マシンのvalueの最大値を取得し、valueを更新する
+//        k -> (v.max(that.counters.getOrElse(k, 0)))
+//      })
+//    }
+//
+//    // 各マシンのvalueを合計
+//    def total: Int = counters.values.sum
+//  }
 
   // 11.3 Generalisation
   /**
@@ -223,4 +223,295 @@ object Chapter11 {
    * IntをSet[A]に置き換えるだけで、GSet型を作成できます
    */
 
+  // 11.3.1 Implementation
+  /**
+   * この一般化をコードで実装しましょう
+   * incrementとtotalには可換モノイドが必要であり、mergeには有界半束（べき等可換モノイド）が必要であることを忘れないでください
+   *
+   * Catsは、MonoidとCommutativeMonoidを提供しますが、有界半束の型クラスは提供しません
+   * （※14: Spireと呼ばれる密接に関連したライブラリがすでにその抽象化を提供しています）
+   * そのため、独自のBoundedSemiLattice型クラスを実装します
+   */
+  //  import cats.kernel.CommutativeMonoid
+  //
+  //  trait BoundedSemiLattice[A] extends CommutativeMonoid[A] {
+  //    def combine(a1: A, a2: A): A
+  //    def empty: A
+  //  }
+
+  /**
+   * 上記の実装では、BoundedSemiLattice[A]はCommutativeMonoid[A]を拡張します
+   * これは、有界半束が可換モノイド（正確にはべき等可換モノイド）であるためです
+   */
+
+  // 11.3.2 Exercise: BoundedSemiLattice Instances
+  /**
+   * IntとSetのBoundedSemiLattice型クラスインスタンスを実装します
+   * Intのインスタンスは、技術的には非負の数に対してのみ成立しますが、型の中でそれを明示的にモデル化する必要はありません
+   */
+  // 答え見た
+  //  import cats.kernel.CommutativeMonoid
+  //
+  //  trait BoundedSemiLattice[A] extends CommutativeMonoid[A] {
+  //    def combine(a1: A, a2: A): A
+  //    def empty: A
+  //  }
+  //
+  //  // 各インスタンスは、コンパニオンオブジェクトに配置するのが一般的
+  //  object BoundedSemiLattice {
+  //    implicit val intInstance: BoundedSemiLattice[Int] =
+  //      new BoundedSemiLattice[Int] {
+  //        def combine(a1: Int, a2: Int): Int = a1.max(a2)
+  //        val empty: Int = 0
+  //      }
+  //
+  //    implicit def setInstance[A]: BoundedSemiLattice[Set[A]] =
+  //      new BoundedSemiLattice[Set[A]] {
+  //        def combine(a1: Set[A], a2: Set[A]): Set[A] = a1.union(a2)
+  //        val empty: Set[A] = Set.empty[A]
+  //      }
+  //  }
+
+  // 11.3.3 Exercise: Generic GCounter
+  /**
+   * CommutativeMonoidとBoundedSemiLatticeを使用して、GCounterを一般化します
+   *
+   * これを実装する時は、Monoidの関数や構文を使用して実装を簡素化する機会を探ってください
+   * これは、型クラスの抽象化がコードの複数のレベルでどのように機能するかを示す良い例です
+   * モノイドを使用して大きなコンポーネント（CRDTs）を設計していますが、モノイドは小さなコンポーネントでも役に立ち、コードを簡素化し、短く明確にします
+   */
+  // 答え見た
+//  import cats.kernel.CommutativeMonoid
+//  import cats.instances.list._
+//  import cats.instances.map._
+//  import cats.syntax.semigroup._
+//  import cats.syntax.foldable._
+//
+//  trait BoundedSemiLattice[A] extends CommutativeMonoid[A] {
+//    def combine(a1: A, a2: A): A
+//    def empty: A
+//  }
+//
+//  object BoundedSemiLattice {
+//    implicit val intInstance: BoundedSemiLattice[Int] =
+//      new BoundedSemiLattice[Int] {
+//        def combine(a1: Int, a2: Int): Int = a1.max(a2)
+//        val empty: Int = 0
+//      }
+//
+//    implicit def setInstance[A]: BoundedSemiLattice[Set[A]] =
+//      new BoundedSemiLattice[Set[A]] {
+//        def combine(a1: Set[A], a2: Set[A]): Set[A] = a1.union(a2)
+//        val empty: Set[A] = Set.empty[A]
+//      }
+//  }
+//
+//  // ここからが答え
+//  // 型がIntからAに抽象化された
+//  // BoundedSemiLatticeコンパニオンオブジェクトで具体的な型でインスタンス化しておけば、GCounterの各関数を汎用的に使える
+//  final case class GCounter[A](counters: Map[String, A]) {
+//    def increment(machine: String, amount: A)(implicit m: CommutativeMonoid[A]): GCounter[A] = {
+//      val value = amount |+| counters.getOrElse(machine, m.empty)
+//      GCounter(counters + (machine -> value))
+//    }
+//
+//    // 上のBoundedSemiLatticeをimplicit
+//    def merge(that: GCounter[A])(implicit b: BoundedSemiLattice[A]): GCounter[A] =
+//      GCounter(this.counters |+| that.counters)
+//
+//    def total(implicit m: CommutativeMonoid[A]): A =
+//      this.counters.values.toList.combineAll
+//  }
+
+  // 11.4 Abstracting GCounter to a Type Class
+  /**
+   * BoundedSemiLatticeとCommutativeMonoidのインスタンスを持つ任意の値で機能する汎用GCounterを作成しました
+   * ただし、マシンIDから値へのMap特有の表現に縛られています
+   * このような制限を設ける必要はありませんし、逆に制限を設けない方が便利な場合もあります
+   * 単純なMapからリレーショナルデータベースまで、扱いたいkey-valueストアはたくさんあります
+   *
+   * GCounter型クラスを定義すると、様々な具体的な実装を抽象化できます
+   * これにより、たとえば、トレードオフ関係にあるパフォーマンスと耐久性を変更したい場合に、メモリのストアを永続のストアにシームレスに置き換えることができます
+   *
+   * これを実装する方法はいくつかあります
+   * 1つのアプローチは、CommutativeMonoidとBoundedSemiLatticeに依存するGCounter型クラスを定義することです
+   * これをMap抽象化のキー型と値型を表す2つの型パラメーター（K,V）を持つ型コンストラクターを取る型クラスとして定義します
+   */
+  //  // Map[String, A]をF[K, V]に抽象化
+  //  trait GCounter[F[_, _], K, V] {
+  //    def increment(f: F[K, V])(k: K, v: V)(implicit m: CommutativeMonoid[V]): F[K, V]
+  //    def merge(f1: F[K, V], f2: F[K, V])(implicit b: BoundedSemiLattice[V]): F[K, V]
+  //    def total(f: F[K, V])(implicit m: CommutativeMonoid[V]): V
+  //  }
+  //
+  //  object GCounter {
+  //    def apply[F[_, _], K, V](implicit counter: GCounter[F, K, V]) =
+  //      counter
+  //  }
+
+  /**
+   * Mapのこの型クラスのインスタンスを定義してみてください
+   * いくつかの小さい変更を加えるだけで、GCounterのケースクラスのコードを再利用できるはずです
+   */
+  // 答え見た
+  //  import cats.kernel.CommutativeMonoid
+  //  import cats.instances.list._
+  //  import cats.instances.map._
+  //  import cats.syntax.semigroup._
+  //  import cats.syntax.foldable._
+  //
+  //  trait BoundedSemiLattice[A] extends CommutativeMonoid[A] {
+  //    def combine(a1: A, a2: A): A
+  //    def empty: A
+  //  }
+  //
+  //  object BoundedSemiLattice {
+  //    implicit val intInstance: BoundedSemiLattice[Int] =
+  //      new BoundedSemiLattice[Int] {
+  //        def combine(a1: Int, a2: Int): Int = a1.max(a2)
+  //        val empty: Int = 0
+  //      }
+  //
+  //    implicit def setInstance[A]: BoundedSemiLattice[Set[A]] =
+  //      new BoundedSemiLattice[Set[A]] {
+  //        def combine(a1: Set[A], a2: Set[A]): Set[A] = a1.union(a2)
+  //        val empty: Set[A] = Set.empty[A]
+  //      }
+  //  }
+  //
+  //  trait GCounter[F[_, _], K, V] {
+  //    def increment(f: F[K, V])(k: K, v: V)(implicit m: CommutativeMonoid[V]): F[K, V]
+  //    def merge(f1: F[K, V], f2: F[K, V])(implicit b: BoundedSemiLattice[V]): F[K, V]
+  //    def total(f: F[K, V])(implicit m: CommutativeMonoid[V]): V
+  //  }
+  //
+  //  object GCounter {
+  //    def apply[F[_, _], K, V](implicit counter: GCounter[F, K, V]) =
+  //      counter
+  //
+  //    // ここからが答え
+  //    // F[K, V]をMap[K, V]に具体化（インスタンス化）
+  //    // GCounterのコンパニオンオブジェクト内でimplicitで定義する
+  //    implicit def mapGCounterInstance[K, V]: GCounter[Map, K, V] =
+  //      new GCounter[Map, K, V] {
+  //        def increment(map: Map[K, V])(key: K, value: V)(implicit m: CommutativeMonoid[V]): Map[K, V] = {
+  //          val total = map.getOrElse(key, m.empty) |+| value
+  //          map + (key -> total)
+  //        }
+  //
+  //        def merge(map1: Map[K, V], map2: Map[K, V])(implicit b: BoundedSemiLattice[V]): Map[K, V] =
+  //          map1 |+| map2
+  //
+  //        def total(map: Map[K, V])(implicit m: CommutativeMonoid[V]): V =
+  //          map.values.toList.combineAll
+  //      }
+  //  }
+  //
+  //  def main(args: Array[String]): Unit = {
+  //    import cats.instances.int._
+  //
+  //    val g1 = Map("a" -> 7, "b" -> 3)
+  //    val g2 = Map("a" -> 2, "b" -> 5)
+  //
+  //    val counter = GCounter[Map, String, Int]
+  //
+  //    val merged = counter.merge(g1, g2)
+  //    val total = counter.total(merged)
+  //
+  //    println(merged) // Map(a -> 7, b -> 5)
+  //    println(total) // 12
+  //  }
+
+  /**
+   * 型クラスのインスタンスの実装方法が少し不満が残ります
+   * 実装の構造は定義するほとんどのインスタンスで同じですが、コードを再利用することはできません
+   * （たとえば、mapGCounterInstanceのincrementとかMap専用なのでもう少し一般化したい（MapをFにしたい））
+   */
+
+  // 11.5 Abstracting a Key Value Store
+  /**
+   * 1つの解決策は、型クラス内のkey-valueストアの思想をキャプチャし、KeyValueStoreインスタンスを持つ任意の型のGCounterインスタンスを生成することです
+   * このような型クラスのコードは以下です
+   */
+  //  trait KeyValueStore[F[_, _]] {
+  //    def put[K, V](f: F[K, V])(k: K, v: V): F[K, V]
+  //
+  //    def get[K, V](f: F[K, V])(k: K): Option[V]
+  //
+  //    def getOrElse[K, V](f: F[K, V])(k: K, default: V): V = get(f)(k).getOrElse(default)
+  //
+  //    def values[K, V](f: F[K, V]): List[V]
+  //  }
+  //
+  //  // Mapの独自のインスタンスを実装します
+  //  // 答え見た
+  //  object KeyValueStore {
+  //    implicit val mapKeyValueStoreInstance: KeyValueStore[Map] =
+  //      new KeyValueStore[Map] {
+  //        def put[K, V](f: Map[K, V])(k: K, v: V): Map[K, V] = f + (k -> v)
+  //
+  //        def get[K, V](f: Map[K, V])(k: K): Option[V] = f.get(k)
+  //
+  //        override def getOrElse[K, V](f: Map[K, V])(k: K, default: V): V =
+  //          f.getOrElse(k, default)
+  //
+  //        def values[K, V](f: Map[K, V]): List[V] = f.values.toList
+  //      }
+  //  }
+
+  /**
+   * 型クラスができたので、インスタンスを持つデータ型を拡張する構文を実装できます
+   */
+//  // KeyValueStoreを使って、各関数を実装
+//  implicit class KvsOps[F[_, _], K, V](f: F[K, V]) {
+//    def put(key: K, value: V)(implicit kvs: KeyValueStore[F]): F[K, V] =
+//      kvs.put(f)(key, value)
+//
+//    def get(key: K)(implicit kvs: KeyValueStore[F]): Option[V] =
+//      kvs.get(f)(key)
+//
+//    def getOrElse(key: K, default: V)(implicit kvs: KeyValueStore[F]): V =
+//      kvs.getOrElse(f)(key, default)
+//
+//    def values(implicit kvs: KeyValueStore[F]): List[V] =
+//      kvs.values(f)
+//  }
+
+  /**
+   * これでimplicit defを使って、KeyValueStoreとCommutativeMonoidのインスタンスを持つ任意のデータ型のGCounterインスタンスを生成できます
+   */
+  // （Map専用ではない）汎用的なgcounterInstanceを定義している
+  // 上のmapKeyValueStoreInstanceでMap専用のインスタンス（putとかgetの）の実装をimplicitで定義
+  // そのスコープ内でgcounterInstanceを呼べば、Mapのincrement、merge、totalになる
+  // 〇〇専用インスタンスを用意すれば、そのスコープ内でgcounterInstanceが汎用的に使える
+//  implicit def gcounterInstance[F[_, _], K, V](implicit kvs: KeyValueStore[F], km: CommutativeMonoid[F[K, V]]) =
+//    new GCounter[F, K, V] {
+//      def increment(f: F[K, V])(key: K, value: V)(implicit m: CommutativeMonoid[V]): F[K, V] = {
+//        val total = f.getOrElse(key, m.empty) |+| value
+//        f.put(key, total)
+//      }
+//
+//      def merge(f1: F[K, V], f2: F[K, V])(implicit b: BoundedSemiLattice[V]): F[K, V] =
+//        f1 |+| f2
+//
+//      def total(f: F[K, V])(implicit m: CommutativeMonoid[V]): V =
+//        f.values.combineAll
+//    }
+
+  /**
+   * このケーススタディの完全なコードは非常に長いですが、そのほとんどは型クラスに対する操作の構文を設定するボイラープレートです
+   * SimulacrumやKind Projectorなどのコンパイラープラグインを使用して、これを削減できます
+   */
+
+  // 11.6 Summary
+  /**
+   * このケーススタディでは、型クラスを使用して、Scalaで単純なCRDTであるGCounterをモデル化する方法を説明しました
+   * 今回の実装では、多くの柔軟性とコードの再利用が可能になりました
+   * 「カウント」するデータ型にも、マシンIDをカウンターにマッピングするデータ型にも縛られません
+   *
+   * このケーススタディでは、CRDTsの調査ではなく、Scalaが提供するツールの使用に焦点を当てています
+   * 他にも多くのCRDTsがあり、その中にはGCounterと同じように動作するものもあれば、実装が大きく異なるものもあります
+   * かなり最近の調査では、基本的なCRDTsの多くの概要が分かります
+   * ただし、これは活発な研究分野であり、CRDTsと最終的に一貫性に関心がある場合は、この分野の最近の出版物を読むことをお勧めします
+   */
 }
